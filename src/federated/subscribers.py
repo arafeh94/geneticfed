@@ -4,10 +4,12 @@ import os
 import pickle
 import time
 from collections import defaultdict
+from datetime import datetime
 
 import matplotlib.pyplot as plt
+from typing.io import IO
 
-from src import tools
+from src import tools, manifest
 from src.apis.mpi import Comm
 from src.data.data_container import DataContainer
 from src.federated.events import FederatedEventPlug, Events
@@ -15,6 +17,7 @@ from src.federated.federated import FederatedLearning
 
 
 class Timer(FederatedEventPlug):
+    TRAINER = 'trainer'
     FEDERATED = 'federated'
     ROUND = 'round'
     TRAINING = 'training'
@@ -48,23 +51,29 @@ class Timer(FederatedEventPlug):
         self.tick('federated', False)
 
     def on_federated_ended(self, params):
-        self.tick('federated', True)
+        self.tick(self.FEDERATED, True)
 
     def on_training_start(self, params):
-        self.tick('training', False)
+        self.tick(self.TRAINING, False)
 
     def on_training_end(self, params):
-        self.tick('training', True)
-        self.tick('aggregation', False)
+        self.tick(self.TRAINING, True)
+        self.tick(self.AGGREGATION, False)
 
     def on_round_start(self, params):
-        self.tick('round', False)
+        self.tick(self.ROUND, False)
 
     def on_round_end(self, params):
-        self.tick('round', True)
+        self.tick(self.ROUND, True)
 
     def on_aggregation_end(self, params):
-        self.tick('aggregation', True)
+        self.tick(self.AGGREGATION, True)
+
+    def on_trainer_start(self, params):
+        self.tick(self.TRAINER, False)
+
+    def on_trainer_end(self, params):
+        self.tick(self.TRAINER, True)
 
     def force(self) -> []:
         return [Events.ET_FED_START, Events.ET_TRAINER_FINISHED, Events.ET_TRAINER_STARTED, Events.ET_TRAIN_START,
@@ -149,10 +158,8 @@ class FedPlot(FederatedEventPlug):
             fig, axs = plt.subplots(2)
             axs[0].plot(self.rounds_accuracy)
             axs[0].set_title('Total Accuracy')
-            axs[1].set_xticks(range(len(self.rounds_accuracy)))
             axs[1].plot(self.rounds_loss)
             axs[1].set_title('Total Loss')
-            axs[1].set_xticks(range(len(self.rounds_loss)))
             fig.suptitle('Total Accuracy & Loss')
             fig.tight_layout()
             plt.show()
@@ -275,3 +282,37 @@ class MPIStopPlug(FederatedEventPlug):
 
     def on_federated_ended(self, params):
         Comm().stop()
+
+
+class Resumable(FederatedEventPlug):
+    def __init__(self, tag, federated: FederatedLearning, verbose=1):
+        super().__init__()
+        os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
+        self.federated = federated
+        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + tag + ".fed"
+        self.verbose = verbose
+
+    def on_init(self, params):
+        if os.path.exists(self.file_name):
+            self.log('found a checkpoint, loading...')
+            file = open(self.file_name, 'rb')
+            loaded = pickle.load(file)
+            context = loaded['context']
+            is_finished = loaded['is_finished']
+            self.federated.context = context
+            self.federated.is_finished = is_finished
+            file.close()
+
+    def on_round_end(self, params):
+        file = open(self.file_name, 'wb')
+        to_save = {
+            'context': self.federated.context,
+            'is_finished': self.federated.is_finished,
+        }
+        self.log('saving checkpoint...')
+        pickle.dump(to_save, file)
+        file.close()
+
+    def log(self, msg):
+        if self.verbose == 1:
+            logging.getLogger('resumable').info(msg)
