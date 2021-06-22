@@ -22,10 +22,9 @@ logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
 client_data = data_loader.mnist_10shards_100c_400min_400max()
-tools.detail(client_data)
 logger.info('Generating Data --Ended')
 
-trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=150, optimizer='sgd',
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
                                criterion='cel', lr=0.1)
 
 federated = FederatedLearning(
@@ -36,11 +35,11 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(3),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 62),
-    num_rounds=0,
+    num_rounds=5,
     desired_accuracy=0.99,
 )
 
-federated.add_subscriber(subscribers.Resumable('agv', federated))
+federated.add_subscriber(subscribers.Resumable('agv', federated, flush=True))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())

@@ -12,7 +12,7 @@ from src import tools
 logger = logging.getLogger('ga')
 
 
-def select_random(genes: tools.ClusterSelector, size):
+def select_random(genes: ClusterSelector, size):
     if len(genes) < size:
         raise Exception("genes size is less than the requested population size")
     rng = default_rng()
@@ -27,7 +27,7 @@ def select_random(genes: tools.ClusterSelector, size):
     return selected
 
 
-def build_population(genes: tools.ClusterSelector, p_size, c_size):
+def build_population(genes: ClusterSelector, p_size, c_size):
     population = []
     for i in range(p_size):
         population.append(select_random(genes, c_size))

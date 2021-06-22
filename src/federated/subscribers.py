@@ -200,6 +200,23 @@ class FedPlot(FederatedEventPlug):
             loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
             self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
 
+    def show_acc_loss(self, acc_y, acc_title, loss_y, loss_title, big_title):
+        config = []
+        if self.show_acc:
+            config.append(self.PlotParams(acc_y, acc_title))
+        if self.show_loss:
+            config.append(self.PlotParams(loss_y, loss_title))
+        self.show(config, big_title)
+
+    def on_federated_ended(self, params):
+        if self.show_global:
+            self.show_acc_loss(self.rounds_accuracy, 'Accuracy', self.rounds_loss, 'Loss', 'Federated Results')
+
+        if self.show_local:
+            acc_y = [trainer_accuracies for trainer_id, trainer_accuracies in self.local_accuracies.items()]
+            loss_y = [trainer_losses for trainer_id, trainer_losses in self.local_losses.items()]
+            self.show_acc_loss(acc_y, 'Local Accuracy', loss_y, 'Local Loss', 'Local AccLoss')
+
     def on_round_end(self, params):
         self.rounds_accuracy.append(params['accuracy'])
         self.rounds_loss.append(params['loss'])
