@@ -9,6 +9,7 @@ import pickle
 
 from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
 from src import tools, manifest
+from src.apis.extentions import Dict
 from src.data.data_container import DataContainer
 from src.data.data_provider import DataProvider, PickleDataProvider
 
@@ -69,7 +70,7 @@ class DataGenerator:
         self.distributed = clients_data
         return clients_data
 
-    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, verbose=0):
+    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size):
         clients_data = defaultdict(list)
         grouper = self.Grouper(self.data.x, self.data.y)
         for client_id in range(num_clients):
@@ -153,7 +154,7 @@ class DataGenerator:
         if self.distributed is None:
             logging.getLogger('data_generator').error('you have to distribute first')
             return None
-        return self.distributed
+        return Dict(self.distributed)
 
     def save(self, path):
         obj = copy.deepcopy(self)
