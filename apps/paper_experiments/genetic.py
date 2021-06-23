@@ -1,6 +1,9 @@
 # mpiexec -n 4 python main_mpi.py
 import logging
 import sys
+
+from src.federated.subscribers.fed_plots import EMDWeightDivergence
+
 sys.path.append("../../")
 
 from src.federated.subscribers.logger import FederatedLogger
@@ -30,11 +33,11 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 args = federated_args.FederatedArgs({
     'epoch': 25,
     'batch': 50,
-    'round': 300,
+    'round': 200,
     'shard': 2,
-    'dataset': 'cifar10',
-    'clients_ratio': 0.1,
-    'learn_rate': 0.001,
+    'dataset': 'mnist',
+    'clients_ratio': 0.2,
+    'learn_rate': 0.01,
     'tag': 'genetic',
     'min': 600,
     'max': 600,
@@ -60,20 +63,20 @@ else:
 
 config = {
     'batch_size': args.batch,
-    'epochs': 100,
+    'epochs': 25,
     'clients_per_round': args.clients_ratio,
     'num_rounds': args.round,
     'desired_accuracy': 0.99,
-    'nb_clusters': 20,
+    'nb_clusters': 10,
     'model': lambda: c_model,
 
-    'ga_max_iter': 20,
+    'ga_max_iter': 5,
     'ga_r_cross': 0.05,
     'ga_r_mut': 0.1,
-    'ga_c_size': 30,
-    'ga_p_size': 300,
+    'ga_c_size': 10,
+    'ga_p_size': 200,
     'ga_min_fitness': 0,
-    'ga_epochs': 500,
+    'ga_epochs': 50,
 
     'save_dir': 'pics',
 }
@@ -105,19 +108,13 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(Resumable(str(args)))
+federated.add_subscriber(EMDWeightDivergence())
 
-# federated.add_subscriber(subscribers.WandbLogger(config))
-# federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
-# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir'], plot_type='linear'))
-# federated.add_subscriber(subscribers.FedPlot())
-# federated.add_subscriber(subscribers.FedSave(args.tag))
-# federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=f'genetic_sgd{args.shard}'))
-# federated.add_subscriber(subscribers.ShowAvgWeightDivergence(plot_each_round=False, save_dir="./pct",
-#                                                              divergence_tag='wd_' + str(args)))
 
 logger.info("----------------------")
 logger.info(f"start federated 1")
 logger.info("----------------------")
 federated.start()
 files.accuracies.save_accuracy(federated, str(args))
+files.divergences.save_divergence(federated, str(args))
+

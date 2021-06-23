@@ -1,5 +1,8 @@
 import logging
 import sys
+
+from src.federated.subscribers.fed_plots import EMDWeightDivergence
+
 sys.path.append('../../')
 
 from src.federated.subscribers.logger import FederatedLogger
@@ -21,11 +24,11 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 args = federated_args.FederatedArgs({
     'epoch': 25,
     'batch': 50,
-    'round': 1000,
+    'round': 200,
     'shard': 2,
-    'dataset': 'cifar10',
-    'clients_ratio': 0.1,
-    'learn_rate': 0.1,
+    'dataset': 'mnist',
+    'clients_ratio': 0.2,
+    'learn_rate': 0.01,
     'tag': 'warmup',
     'min': 600,
     'max': 600,
@@ -72,15 +75,11 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(Resumable(str(args)))
-
-# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
-# federated.add_subscriber(subscribers.FedSave(str(args)))
-# federated.add_subscriber(
-#     ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=f'warmup_sgd{args.shard}'))
+federated.add_subscriber(EMDWeightDivergence())
 
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
 files.accuracies.save_accuracy(federated, str(args))
+files.divergences.save_divergence(federated, str(args))

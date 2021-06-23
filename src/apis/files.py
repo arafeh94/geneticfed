@@ -70,7 +70,8 @@ class AccuracyCompare(Serializable):
         last_tag = last_tag.replace("- LR01", "").replace("E", "E: ").replace("B", "B: ") \
             .replace('- R', '- R: ').replace('- S', "- Ψ: ").replace('CR', 'CR: ') \
             .replace('01', '0.1').replace('05', '0.5').replace('02', '0.2').replace('CR: 10', 'CR: 1') \
-            .replace('1000', '500').replace('9999', '∞').replace('999', '∞').replace('0.2', '0.1')
+            .replace('1000', '500').replace('9999', '∞').replace('999', '∞').replace('0.2', '0.1').replace('0.00.1',
+                                                                                                           '0.001')
         title = last_tag if title is None else title
         plt.ylim()
         plt.title(title)
@@ -91,8 +92,12 @@ class DivergenceCompare(Serializable):
     def append(self, tag, val):
         self.sync(self._append, tag, val)
 
-    def save_divergence(self, div_evolution_list, tag):
-        self.append(tag, div_evolution_list)
+    def save_divergence(self, federated_learning, tag):
+        def reducer(first, key, val):
+            return [val['wd']] if first is None else np.append(first, val['wd'])
+
+        all_div = federated_learning.context.history.reduce(reducer)
+        self.append(tag, all_div)
 
     def get_saved_divergences(self, filter: typing.Callable[[str], bool] = None):
         self.load()

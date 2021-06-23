@@ -9,24 +9,25 @@ import src.apis.files as fl
 import src.tools as tools
 from src import manifest
 
-[print(v) for v in fl.accuracies.get_saved_accuracy()]
+accs = fl.AccuracyCompare(manifest.COMPARE_PATH + 'acc.pkl')
+acc_cl = fl.AccuracyCompare(manifest.COMPARE_PATH + 'acc_cl.pkl')
 
-accs = fl.accuracies
-
-
-def fil(item: str):
-    return item.endswith('_e25_b50_r500_s10_mnist_cr02_lr0.1')
+[print(v) for v in accs.get_saved_accuracy()]
 
 
 filts = [
-    fil,
-    # lambda x: x.endswith('_e25_b50_r500_s10_mnist_cr01_lr0.1'),
-    # lambda x: x == 'warmup_e1_b9999_r1000_s4_cifar10_cr02_lr0.001'
+    # lambda item: item.endswith('_e1_b999_r500_s2_mnist_cr01_lr0.001'),
+    lambda item: item == 'basic_e1_b999_r500_s10_mnist_cr01_lr0.1',
+    lambda item: item == 'genetic_e1_b999_r500_s10_mnist_cr01_lr0.001',
+    lambda item: item == 'warmup_e1_b999_r500_s10_mnist_cr01_lr0.001',
 ]
+
 
 all = {}
 
 for fil in filts:
     all = {**all, **accs.get_saved_accuracy(fil)}
+
+
 
 accs.show_saved_accuracy_plot_acc(all)

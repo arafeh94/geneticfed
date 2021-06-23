@@ -27,44 +27,14 @@ def run_command(execution, force=False):
 
 
 key_tests = {
-    'cifar': test_cases.build({
-        'epoch': [25],
-        'batch': [50],
-        'round': [500],
-        'client_ratio': [0.1],
-        'dataset': ['cifar10'],
-        'learn_rate': [0.001],
-        'tag': ['cluster'],
-        'shard': [2, 4, 10]
-    }),
     'mnist': test_cases.build({
-        'epoch': [25],
-        'batch': [50],
+        'epoch': [1],
+        'batch': [999],
         'round': [500],
         'client_ratio': [0.1],
         'dataset': ['mnist'],
         'learn_rate': [0.1],
-        'tag': ['cluster'],
-        'shard': [2, 4, 10]
-    }),
-    'sgd_mnist': test_cases.build({
-        'epoch': [1],
-        'batch': [9999],
-        'round': [500],
-        'client_ratio': [0.1],
-        'dataset': ['mnist'],
-        'learn_rate': [0.1],
-        'tag': ['cluster'],
-        'shard': [2, 4, 10]
-    }),
-    'sgd_cifar': test_cases.build({
-        'epoch': [1],
-        'batch': [9999],
-        'round': [500],
-        'client_ratio': [0.1],
-        'dataset': ['cifar10'],
-        'learn_rate': [0.001],
-        'tag': ['cluster'],
+        'tag': ['basic'],
         'shard': [2, 4, 10]
     }),
 }
