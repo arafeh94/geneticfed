@@ -67,7 +67,7 @@ class Dict(dict, Functional):
     def reduce(self, func: typing.Callable):
         first = None
         for key, val in self.items():
-            first = func(first, (key, val))
+            first = func(first, key, val)
         return first
 
 

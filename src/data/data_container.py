@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from src.apis.extentions import Functional
+from src.apis.extensions import Functional
 
 
 class DataContainer(Functional):

@@ -9,7 +9,7 @@ import pickle
 
 from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
 from src import tools, manifest
-from src.apis.extentions import Dict
+from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 from src.data.data_provider import DataProvider, PickleDataProvider
 

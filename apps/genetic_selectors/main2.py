@@ -8,6 +8,8 @@ from torch import nn
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
 from libs.model.cv.cnn import CNN
+from src import manifest
+from src.apis import files
 from src.federated.subscribers import Timer
 
 sys.path.append(dirname(__file__) + '../')
@@ -27,14 +29,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_2shards_100c_600min_600max()
+client_data = data_loader.mnist_2shards_100c_600min_600max().select(range(30))
 logger.info('Generating Data --Ended')
 
 config = {
     'batch_size': 50,
     'epochs': 15,
     'clients_per_round': 0.2,
-    'num_rounds': 50,
+    'num_rounds': 1,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
     'model': lambda: LogisticRegression(28 * 28, 10),
@@ -79,3 +81,9 @@ logger.info("----------------------")
 logger.info(f"start federated 1")
 logger.info("----------------------")
 federated.start()
+
+all_acc = federated.context.history.reduce(
+    lambda first, key, val: [val['acc']] if first is None else first.append(val['acc'])
+)
+
+files.append(all_acc, 'genetic', manifest.DEFAULT_ACC_PATH)

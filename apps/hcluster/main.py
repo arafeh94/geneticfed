@@ -3,7 +3,8 @@ import logging
 from collections import defaultdict
 from sklearn.cluster import AgglomerativeClustering
 from libs.model.linear.lr import LogisticRegression
-from src import tools
+from src import tools, manifest
+from src.apis import files
 from src.data import data_loader
 
 from src.data.data_container import DataContainer
@@ -120,3 +121,6 @@ while not all(finished_tasks):
 
 runs = fedruns.FedRuns(clustered_federated)
 runs.plot_avg()
+
+avg_acc, avg_loss = runs.avg()
+files.append(avg_acc, 'cluster', manifest.DEFAULT_ACC_PATH)
