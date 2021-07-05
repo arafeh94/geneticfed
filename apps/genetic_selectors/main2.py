@@ -75,6 +75,7 @@ federated = FederatedLearning(
     desired_accuracy=config['desired_accuracy'],
 )
 
+federated.add_subscriber(subscribers.WandbLogger(config))
 federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
 federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir']))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))

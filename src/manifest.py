@@ -8,11 +8,10 @@ COMPARE_PATH = ROOT_PATH + "/compares/"
 DEFAULT_ACC_PATH = COMPARE_PATH + "acc.plt"
 __urls_datasets_links_ = None
 
-
 class WandbAuth:
-    key = ''
-    project = ''
-    entity = ''
+    key = '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc'
+    project = 'geneticfed'
+    entity = 'arafeh'
 
 
 def dataset_urls(dataset: str):
