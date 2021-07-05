@@ -17,7 +17,7 @@ sys.path.append(dirname(__file__) + '../')
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
-from apps.genetic_selectors.src import initializer
+from apps.genetic_selectors.algo import initializer
 from src.federated.components import metrics, client_selectors, aggregators
 from src.federated import subscribers, fedruns
 from src.federated.federated import Events
