@@ -7,7 +7,7 @@ from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
-from libs.model.cv.cnn import CNN
+from libs.model.cv.cnn import CNN, CNN_OriginalFedAvg
 from src import manifest
 from src.apis import files
 from src.federated.subscribers import Timer
@@ -29,24 +29,26 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_2shards_100c_600min_600max().select(range(30))
+client_data = data_loader.femnist_2shards_100c_2000min_2000max()
 logger.info('Generating Data --Ended')
 
 config = {
     'batch_size': 50,
     'epochs': 15,
     'clients_per_round': 0.2,
-    'num_rounds': 1,
+    'num_rounds': 1000,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
-    'model': lambda: LogisticRegression(28 * 28, 10),
+    'model': lambda: CNN_OriginalFedAvg(False),
 
-    'ga_max_iter': 10,
+    'ga_max_iter': 20,
     'ga_r_cross': 0.05,
     'ga_r_mut': 0.1,
-    'ga_c_size': 30,
+    'ga_c_size': 62,
     'ga_p_size': 200,
     'ga_min_fitness': 0.45,
+
+    'save_dir': 'genetic',
 }
 
 initial_model = initializer.ga_module_creator(
@@ -73,6 +75,8 @@ federated = FederatedLearning(
     desired_accuracy=config['desired_accuracy'],
 )
 
+federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
+federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir']))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())

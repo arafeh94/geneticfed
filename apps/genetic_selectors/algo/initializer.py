@@ -1,15 +1,16 @@
 import logging
+import typing
 
 from torch import nn
 
-from apps.genetic_selectors.src.cluster_selector import ClusterSelector
+from apps.genetic_selectors.algo.cluster_selector import ClusterSelector
 from src import tools
-from apps.genetic_selectors.src import genetic
-from apps.genetic_selectors.src.context import Context
+from apps.genetic_selectors.algo import genetic
+from apps.genetic_selectors.algo.context import Context
 
 
 def ga_module_creator(clients_data, init_model, max_iter=10, r_cross=0.1, r_mut=0.05, c_size=10,
-                      p_size=20, clusters=10, desired_fitness=0.5) -> nn.Module:
+                      p_size=20, clusters=10, desired_fitness=0.5) -> typing.Callable:
     context = Context(clients_data, init_model)
     context.train(ratio=0.1)
     clustered = ClusterSelector(context.cluster(clusters, compress=False))

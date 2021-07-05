@@ -3,10 +3,10 @@ import logging
 import numpy as np
 from torch import nn
 
-from apps.genetic_selectors.src.cluster_selector import ClusterSelector
+from apps.genetic_selectors.algo.cluster_selector import ClusterSelector
 from src import tools
-from apps.genetic_selectors.src import genetic
-from apps.genetic_selectors.src.context import Context
+from apps.genetic_selectors.algo import genetic
+from apps.genetic_selectors.algo.context import Context
 
 
 def rl_module_creator(clients_data, initial_model) -> nn.Module:

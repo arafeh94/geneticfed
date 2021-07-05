@@ -6,6 +6,7 @@ import torch
 from torch import Tensor
 
 import src
+from src.apis.extensions import Functional
 
 
 class DataContainer(Functional):
