@@ -431,6 +431,7 @@ class ShowWeightDivergence(FederatedEventPlug):
             for trainer_id_1, weights_1 in trainers_weights.items():
                 w0 = tools.flatten_weights(weights)
                 w1 = tools.flatten_weights(weights_1)
+
                 heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
         save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
         plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
