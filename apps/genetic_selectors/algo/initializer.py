@@ -21,6 +21,8 @@ def ga_module_creator(clients_data, init_model, max_iter=10, r_cross=0.1, r_mut=
     return lambda: global_model
 
 
+
+
 def cluster_module_creator(clients_data, init_model, clusters=10, c_size=1):
     context = Context(clients_data, init_model)
     context.train(ratio=0.1)
