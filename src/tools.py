@@ -102,7 +102,7 @@ def infer(model, test_data):
     test_loss = test_acc = test_total = 0.
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
-        for batch_idx, (x, target) in tqdm.tqdm(enumerate(test_data), 'inferring'):
+        for batch_idx, (x, target) in enumerate(test_data):
             pred = model(x)
             loss = criterion(pred, target)
             _, predicted = torch.max(pred, -1)

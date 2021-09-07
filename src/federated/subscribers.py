@@ -367,6 +367,7 @@ class Resumable(FederatedEventPlug):
 class ShowDataDistribution(FederatedEventPlug):
     def __init__(self, label_count, per_round=False, save_dir=None):
         super().__init__()
+        self.logger = logging.getLogger('data_distribution')
         self.label_count = label_count
         self.per_round = per_round
         self.save_dir = save_dir
@@ -385,6 +386,8 @@ class ShowDataDistribution(FederatedEventPlug):
             self.plot(clients_data)
 
     def plot(self, clients_data):
+        tick = time.time()
+        self.logger.info('building data distribution...')
         ids = list(clients_data.keys())
         id_mapper = lambda id: ids.index(id)
 
@@ -394,6 +397,7 @@ class ShowDataDistribution(FederatedEventPlug):
                 client_label_count[id_mapper(client_id)][y] += 1
         save_dir = f"./{self.save_dir}/round_{self.round_id}_dd.png" if self.save_dir is not None else None
         plots.heatmap(client_label_count, 'Clients Data Distribution', 'x:Client - y:Class', save_dir)
+        self.logger.info(f'building data distribution finished {time.time() - tick}')
 
 
 class ShowWeightDivergence(FederatedEventPlug):
@@ -422,6 +426,8 @@ class ShowWeightDivergence(FederatedEventPlug):
         self.global_weights = params['global_weights']
 
     def on_round_end(self, params):
+        tick = time.time()
+        self.logger.info('building weights divergence...')
         self.round_id = params['context'].round_id
         save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
         acc = params['accuracy']
@@ -429,6 +435,18 @@ class ShowWeightDivergence(FederatedEventPlug):
         if self.include_global_weights:
             trainers_weights[len(trainers_weights)] = self.global_weights
         ids = list(trainers_weights.keys())
+        heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
+        id_mapper = lambda id: ids.index(id)
+        for trainer_id, weights in trainers_weights.items():
+            for trainer_id_1, weights_1 in trainers_weights.items():
+                w0 = tools.flatten_weights(weights)
+                w1 = tools.flatten_weights(weights_1)
+                heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
+        plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
+        if self.show_log:
+            self.logger.info(heatmap)
+        self.logger.info(f'building weights divergence finished {time.time() - tick}')
         id_mapper = lambda id: ids.index(id)
         if self.plot_type == 'matrix':
             heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
