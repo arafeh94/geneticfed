@@ -29,22 +29,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.femnist_2shards_100c_2000min_2000max()
+client_data = data_loader.mnist_2shards_100c_600min_600max()
 logger.info('Generating Data --Ended')
 
 config = {
     'batch_size': 50,
-    'epochs': 15,
+    'epochs': 50,
     'clients_per_round': 0.2,
     'num_rounds': 1000,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
-    'model': lambda: CNN_OriginalFedAvg(False),
+    'model': lambda: LogisticRegression(28 * 28, 10),
 
     'ga_max_iter': 20,
     'ga_r_cross': 0.05,
     'ga_r_mut': 0.1,
-    'ga_c_size': 62,
+    'ga_c_size': 50,
     'ga_p_size': 200,
     'ga_min_fitness': 0.45,
 
@@ -75,9 +75,9 @@ federated = FederatedLearning(
     desired_accuracy=config['desired_accuracy'],
 )
 
-federated.add_subscriber(subscribers.WandbLogger(config))
+# federated.add_subscriber(subscribers.WandbLogger(config))
 federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
-federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir']))
+federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir'], plot_type='linear'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedPlot())

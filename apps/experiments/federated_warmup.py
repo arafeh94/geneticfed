@@ -1,10 +1,15 @@
 import logging
 import sys
+from typing import Callable
 
 from torch import nn
 
 from libs.model.cv.cnn import CNN
+from src.apis import lambdas
+from src.apis.extensions import TorchModel
+from src.data.data_container import DataContainer
 from src.data.data_provider import PickleDataProvider
+from src.federated.components.trainers import TorchTrainer
 
 sys.path.append('../../')
 from libs.model.linear.lr import LogisticRegression
@@ -22,8 +27,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_10shards_100c_400min_400max()
+client_data = data_loader.mnist_1shards_100c_600min_600max()
+# warmup_client_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.05)[0]).reduce(lambdas.dict2dc).as_tensor()
+# task_client_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.05)[1]).map(lambdas.as_tensor)
 logger.info('Generating Data --Ended')
+
+# initial_model = TorchModel(LogisticRegression(28 * 28, 10))
+# initial_model.train(warmup_client_data.batch(50), epochs=500)
+# initial_model = initial_model.extract()
+initial_model = LogisticRegression(28 * 28, 10)
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
                                criterion='cel', lr=0.1)
@@ -35,16 +47,14 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
+    initial_model=lambda: initial_model,
     num_rounds=50,
     desired_accuracy=0.99,
 )
-
 # federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedPlot(plot_each_round=True))
-# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./pct", plot_type='matrix'))
+federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./pct", plot_type='linear'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

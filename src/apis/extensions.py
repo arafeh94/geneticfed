@@ -205,4 +205,7 @@ class TorchModel:
         weights = pca.transform(weights)
         return weights.flatten()
 
+    def extract(self):
+        return self.model
+
 

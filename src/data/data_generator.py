@@ -41,8 +41,9 @@ class DataGenerator:
         self.distributed = self.data.distributor().distribute_percentage(num_clients, percentage, min_size, max_size)
         return self.distributed
 
-    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size):
-        self.distributed = self.data.distributor().distribute_shards(num_clients, shards_per_client, min_size, max_size)
+    def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, is_random=False):
+        self.distributed = self.data.distributor() \
+            .distribute_shards(num_clients, shards_per_client, min_size, max_size, is_random)
         return self.distributed
 
     def distribute_continuous(self, num_clients, min_size, max_size):
@@ -55,7 +56,7 @@ class DataGenerator:
 
     def describe(self, selection=None):
         if self.distributed is None:
-            logging.getLogger(self).error('you have to distribute first')
+            logging.getLogger(str(self)).error('you have to distribute first')
             return
         tools.detail(self.distributed, selection)
 

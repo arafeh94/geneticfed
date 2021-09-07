@@ -5,12 +5,9 @@ import pickle
 import time
 import typing
 from collections import defaultdict
-from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from typing.io import IO
 
 from src import tools, manifest
 from src.apis import plots
@@ -400,7 +397,12 @@ class ShowDataDistribution(FederatedEventPlug):
 
 
 class ShowWeightDivergence(FederatedEventPlug):
-    def __init__(self, show_log=False, include_global_weights=False, save_dir=None):
+    def __init__(self, show_log=False, include_global_weights=False, save_dir=None, plot_type='matrix'):
+        """
+        plot_type = matrix | linear
+        Returns:
+            object: FederatedEventPlug
+        """
         super().__init__()
         self.logger = logging.getLogger('weights_divergence')
         self.show_log = show_log
@@ -409,6 +411,7 @@ class ShowWeightDivergence(FederatedEventPlug):
         self.global_weights = None
         self.save_dir = save_dir
         self.round_id = 0
+        self.plot_type = plot_type
         if self.save_dir is not None:
             os.makedirs(self.save_dir, exist_ok=True)
 
@@ -420,20 +423,30 @@ class ShowWeightDivergence(FederatedEventPlug):
 
     def on_round_end(self, params):
         self.round_id = params['context'].round_id
+        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
         acc = params['accuracy']
         trainers_weights = self.trainers_weights
         if self.include_global_weights:
             trainers_weights[len(trainers_weights)] = self.global_weights
         ids = list(trainers_weights.keys())
-        heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
         id_mapper = lambda id: ids.index(id)
-        for trainer_id, weights in trainers_weights.items():
-            for trainer_id_1, weights_1 in trainers_weights.items():
-                w0 = tools.flatten_weights(weights)
-                w1 = tools.flatten_weights(weights_1)
+        if self.plot_type == 'matrix':
+            heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
+            for trainer_id, weights in trainers_weights.items():
+                for trainer_id_1, weights_1 in trainers_weights.items():
+                    w0 = tools.flatten_weights(weights)
+                    w1 = tools.flatten_weights(weights_1)
 
-                heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
-        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
-        plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
-        if self.show_log:
-            self.logger.info(heatmap)
+                    heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
+            plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
+            if self.show_log:
+                self.logger.info(heatmap)
+        elif self.plot_type == 'linear':
+            weight_dict = defaultdict(lambda: [])
+            for trainer_id, weights in trainers_weights.items():
+                weights = tools.flatten_weights(weights)
+                weights = tools.compress(weights, 10, 1)
+                weight_dict[trainer_id] = weights
+            plots.linear(weight_dict, "Model's Weights", f'Round {self.round_id}', save_dir)
+        else:
+            raise Exception('plot type should be a string with a value either "linear" or "matrix"')
