@@ -3,31 +3,18 @@ import logging
 import sys
 from os.path import dirname
 
-from torch import nn
-
-from apps.flsim.src.client_selector import RLSelector
-from apps.flsim.src.initializer import rl_module_creator
-from libs.model.cv.cnn import CNN, CNN_OriginalFedAvg
-from src import manifest
-from src.apis import files
-from src.data.data_loader import preload
-from src.federated.subscribers import Timer
+from libs.model.collection import CNNCifar
+from src import tools
+from src.data.data_container import DataContainer
 
 sys.path.append(dirname(__file__) + '../')
 
-from libs.model.linear.lr import LogisticRegression
-from src.federated.components.trainers import TorchTrainer
-from src.federated.protocols import TrainerParams
-from apps.genetic_selectors.algo import initializer
-from src.federated.components import metrics, client_selectors, aggregators
-from src.federated import subscribers, fedruns
-from src.federated.federated import Events
-from src.federated.federated import FederatedLearning
-from src.federated.components.trainer_manager import SeqTrainerManager
 from src.data import data_generator, data_loader
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
+clients_data = data_loader.cifar10_10shards_100c_400min_400max().map(lambda cid, dt: dt.reshape((-1, 3, 32, 32)))
 
-dt = preload('cifar10_10shards_100c_400min_400max', 'cifar10', lambda dg: dg.distribute_shards(100, 10, 400, 400))
-print(dt)
+model = CNNCifar(10)
+tools.train(model, clients_data[0].batch(10))
+print(clients_data)

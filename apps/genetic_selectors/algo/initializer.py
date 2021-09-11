@@ -9,18 +9,16 @@ from apps.genetic_selectors.algo import genetic
 from apps.genetic_selectors.algo.context import Context
 
 
-def ga_module_creator(clients_data, init_model, max_iter=10, r_cross=0.1, r_mut=0.05, c_size=10,
-                      p_size=20, clusters=10, desired_fitness=0.5) -> typing.Callable:
+def ga_module_creator(clients_data, init_model, max_iter=20, r_cross=0.1, r_mut=0.05, c_size=10,
+                      p_size=20, clusters=10, desired_fitness=0.5, epoch=100, batch=50) -> typing.Callable:
     context = Context(clients_data, init_model)
-    context.train(ratio=0.1)
+    context.train(0.3, epoch, batch)
     clustered = ClusterSelector(context.cluster(clusters, compress=False))
     best, all_solutions = genetic.ga(fitness=context.fitness, genes=clustered, desired=desired_fitness,
                                      max_iter=max_iter, r_cross=r_cross, r_mut=r_mut, c_size=c_size, p_size=p_size)
     logging.getLogger('ga').info(best)
     global_model = context.aggregate_clients(best)
     return lambda: global_model
-
-
 
 
 def cluster_module_creator(clients_data, init_model, clusters=10, c_size=1):

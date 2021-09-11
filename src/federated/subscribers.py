@@ -1,7 +1,9 @@
 import atexit
 import logging
+import math
 import os
 import pickle
+import statistics
 import time
 import typing
 from collections import defaultdict
@@ -264,7 +266,7 @@ class CustomModelTestPlug(FederatedEventPlug):
 
 
 class FedSave(FederatedEventPlug):
-    def __init__(self, tag, folder_name="./logs/"):
+    def __init__(self, tag, folder_name=manifest.COMPARE_PATH):
         super().__init__()
         self.folder_name = folder_name
         self.file_name = "fedruns.pkl"
@@ -277,9 +279,7 @@ class FedSave(FederatedEventPlug):
     def on_federated_ended(self, params):
         context = params['context']
         all_runs = self.old_runs()
-        if self.tag not in all_runs:
-            all_runs[self.tag] = []
-        all_runs[self.tag].append(context)
+        all_runs[self.tag] = context
         with open(self.path(), 'wb') as file:
             try:
                 pickle.dump(all_runs, file)
@@ -303,7 +303,9 @@ class FedSave(FederatedEventPlug):
         return self.folder_name + self.file_name
 
     @staticmethod
-    def unpack(file_path) -> typing.Dict[str, FederatedLearning.Context]:
+    def unpack(file_path=None) -> typing.Dict[str, FederatedLearning.Context]:
+        if file_path is None:
+            file_path = manifest.COMPARE_PATH + 'fedruns.pkl'
         return pickle.load(open(file_path, 'rb'))
 
 
@@ -435,26 +437,14 @@ class ShowWeightDivergence(FederatedEventPlug):
         if self.include_global_weights:
             trainers_weights[len(trainers_weights)] = self.global_weights
         ids = list(trainers_weights.keys())
-        heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
-        id_mapper = lambda id: ids.index(id)
-        for trainer_id, weights in trainers_weights.items():
-            for trainer_id_1, weights_1 in trainers_weights.items():
-                w0 = tools.flatten_weights(weights)
-                w1 = tools.flatten_weights(weights_1)
-                heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
-        save_dir = f"./{self.save_dir}/round_{self.round_id}_wd.png" if self.save_dir is not None else None
-        plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
-        if self.show_log:
-            self.logger.info(heatmap)
         self.logger.info(f'building weights divergence finished {time.time() - tick}')
-        id_mapper = lambda id: ids.index(id)
         if self.plot_type == 'matrix':
+            id_mapper = lambda id: ids.index(id)
             heatmap = np.zeros((len(trainers_weights), len(trainers_weights)))
             for trainer_id, weights in trainers_weights.items():
                 for trainer_id_1, weights_1 in trainers_weights.items():
                     w0 = tools.flatten_weights(weights)
                     w1 = tools.flatten_weights(weights_1)
-
                     heatmap[id_mapper(trainer_id)][id_mapper(trainer_id_1)] = np.var(np.subtract(w0, w1))
             plots.heatmap(heatmap, 'Weight Divergence', f'Acc {round(acc, 4)}', save_dir)
             if self.show_log:
@@ -465,6 +455,15 @@ class ShowWeightDivergence(FederatedEventPlug):
                 weights = tools.flatten_weights(weights)
                 weights = tools.compress(weights, 10, 1)
                 weight_dict[trainer_id] = weights
-            plots.linear(weight_dict, "Model's Weights", f'Round {self.round_id}', save_dir)
+            avg_weight_divergence = self.get_average_weight_divergence(trainers_weights)
+            plots.linear(weight_dict, "Model's Weights", f'R: {self.round_id} ω: {avg_weight_divergence}', save_dir)
         else:
             raise Exception('plot type should be a string with a value either "linear" or "matrix"')
+
+    @staticmethod
+    def get_average_weight_divergence(trainers_weights):
+        all_weights = []
+        for trained_id, trainers_weight in trainers_weights.items():
+            all_weights.extend(tools.flatten_weights(trainers_weight))
+        result = statistics.variance(all_weights)
+        return result

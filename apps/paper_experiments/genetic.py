@@ -28,14 +28,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_2shards_100c_600min_600max()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 config = {
     'batch_size': 50,
     'epochs': 50,
     'clients_per_round': 0.2,
-    'num_rounds': 100,
+    'num_rounds': 10,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
     'model': lambda: LogisticRegression(28 * 28, 10),
@@ -58,8 +58,6 @@ initial_model = initializer.ga_module_creator(
     desired_fitness=config['ga_min_fitness'], epoch=200, batch=50
 )
 
-# initial_model = config['model']
-
 trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=config['epochs'],
                                batch_size=config['batch_size'], criterion='cel', lr=0.1)
 federated = FederatedLearning(
@@ -76,13 +74,13 @@ federated = FederatedLearning(
 
 # federated.add_subscriber(subscribers.WandbLogger(config))
 # federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
-federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir'], plot_type='linear'))
+# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir'], plot_type='linear'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedPlot())
-# federated.add_subscriber(subscribers.FedSave('genetic'))
+federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND, Timer.AGGREGATION, Timer.TRAINING]))
+# federated.add_subscriber(subscribers.FedPlot())
+federated.add_subscriber(subscribers.FedSave('genetic'))
 logger.info("----------------------")
 logger.info(f"start federated 1")
 logger.info("----------------------")
 federated.start()
-
+files.accuracies.save_accuracy(federated, 'genetic')

@@ -23,7 +23,7 @@ class Context:
         self.init_model = self.create_model()
         self.logging = logging.getLogger('context')
 
-    def train(self, ratio=0):
+    def train(self, ratio=0, epochs=100, batch=50):
         self.logging.info("Building Models --Started")
 
         for client_idx, data in self.clients_data.items():
@@ -34,7 +34,7 @@ class Context:
                 data = DataContainer(new_x, new_y)
             self.logging.info(f"Building Models --ClientID{client_idx}")
             model = copy.deepcopy(self.init_model)
-            trained = tools.train(model, data.batch(8), epochs=100)
+            trained = tools.train(model, data.batch(batch), epochs=epochs)
             self.model_stats[client_idx] = trained
             self.models[client_idx] = model
             self.sample_dict[client_idx] = len(data)

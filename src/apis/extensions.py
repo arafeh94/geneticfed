@@ -1,4 +1,6 @@
 import copy
+import os
+import pickle
 import typing
 from abc import abstractmethod
 from collections import defaultdict
@@ -119,6 +121,23 @@ class Array(typing.List[V], Functional):
         return Array(self.copy().extend(other))
 
 
+class Serializable:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def save(self):
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        pickle.dump(self.__dict__, open(self.file_path, 'wb'))
+
+    def load(self):
+        if os.path.exists(self.file_path):
+            try:
+                self.__dict__ = pickle.load(open(self.file_path, 'rb'))
+            except Exception as e:
+                print(e)
+
+
+
 class TorchModel:
     def __init__(self, model):
         self.model = model
@@ -205,5 +224,3 @@ class TorchModel:
 
     def extract(self):
         return self.model
-
-
