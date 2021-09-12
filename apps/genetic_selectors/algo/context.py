@@ -10,11 +10,13 @@ from sklearn import decomposition
 from sklearn.cluster import KMeans
 import logging
 from src import tools
+from src.apis.extensions import Serializable
 from src.data.data_container import DataContainer
 
 
-class Context:
-    def __init__(self, clients_data: {int: DataContainer}, create_model: callable):
+class Context(Serializable):
+    def __init__(self, clients_data: {int: DataContainer}, create_model: callable, saved_model_path='./saved_models'):
+        super().__init__(saved_model_path)
         self.clients_data: {int: DataContainer} = clients_data
         self.model_stats = {}
         self.models = {}
@@ -22,8 +24,13 @@ class Context:
         self.create_model = create_model
         self.init_model = self.create_model()
         self.logging = logging.getLogger('context')
+        self.load()
 
     def train(self, ratio=0, epochs=100, batch=50):
+        if len(self.models) > 0:
+            self.logging.info("Models Loaded")
+            return
+
         self.logging.info("Building Models --Started")
 
         for client_idx, data in self.clients_data.items():
@@ -44,6 +51,7 @@ class Context:
                         pyplot.imshow(image.view(28, 28))
                         pyplot.show()
         self.logging.info("Building Models --Finished")
+        self.save()
 
     def cluster(self, cluster_size=10, compress=True):
         self.logging.info("Clustering Models --Started")

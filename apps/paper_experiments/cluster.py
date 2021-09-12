@@ -2,12 +2,15 @@ import copy
 import logging
 from collections import defaultdict
 from sklearn.cluster import AgglomerativeClustering
+
+from apps.paper_experiments import federated_args
 from libs.model.linear.lr import LogisticRegression
 from src import tools, manifest
 from src.apis import files
 from src.data import data_loader
 
 from src.data.data_container import DataContainer
+from src.data.data_loader import preload
 from src.federated import subscribers, fedruns
 from src.federated.components import params, client_selectors
 from src.federated.components.aggregators import AVGAggregator
@@ -18,18 +21,30 @@ from src.federated.events import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 
+args = federated_args.FederatedArgs({
+    'epoch': 10,
+    'batch': 50,
+    'round': 3,
+    'shard': 2,
+    'dataset': 'mnist',
+    'clients_ratio': 0.1,
+    'learn_rate': 0.1,
+    'tag': 'cluster',
+})
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_2shards_100c_600min_600max()
+client_data = preload(f'mnist_{args.shard}shards_100c_600min_600max', args.dataset,
+                      lambda dg: dg.distribute_shards(100, args.shard, 600, 600))
 logger.info('Generating Data --Ended')
 
 config = {
-    'batch_size': 50,
-    'epochs': 15,
-    'clients_per_round': 0.2,
-    'num_rounds': 50,
+    'batch_size': args.batch,
+    'epochs': args.epoch,
+    'clients_per_round': args.clients_ratio,
+    'num_rounds': args.round,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
     'model': lambda: LogisticRegression(28 * 28, 10),
@@ -57,7 +72,7 @@ update_data = partition(config['update_data_ration'])
 federated_learning = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
     trainer_config=TrainerParams(trainer_class=TorchChunkTrainer, batch_size=config['batch_size'], epochs=1,
-                                 criterion='cel', optimizer='sgd', lr=0.1),
+                                 criterion='cel', optimizer='sgd', lr=args.learn_rate),
     num_rounds=config['clustering_num_rounds'],
     client_selector=client_selectors.All(),
     desired_accuracy=0.99,
@@ -75,7 +90,7 @@ w = global_model.state_dict()
 clients_diff_weights = {}
 for client_id, data in update_data.items():
     model_copy = copy.deepcopy(global_model)
-    tools.train(model_copy, data.batch(config['batch_size']), epochs=1, lr=0.1)
+    tools.train(model_copy, data.batch(config['batch_size']), epochs=1, lr=args.learn_rate)
     wc = model_copy.state_dict()
     delta = tools.flatten_weights(w) - tools.flatten_weights(wc)
     clients_diff_weights[client_id] = delta
@@ -97,10 +112,10 @@ for cluster, client_ids in clustered_clients.items():
         continue
     federated = FederatedLearning(
         trainer_manager=SeqTrainerManager(),
-        trainer_config=TrainerParams(trainer_class=TorchChunkTrainer, batch_size=50, epochs=10, criterion='cel',
-                                     optimizer='sgd', lr=0.1),
+        trainer_config=TrainerParams(trainer_class=TorchChunkTrainer, batch_size=args.batch, epochs=args.epoch,
+                                     criterion='cel', optimizer='sgd', lr=args.learn_rate),
         num_rounds=config['num_rounds'],
-        client_selector=client_selectors.Random(0.55),
+        client_selector=client_selectors.Random(args.clients_ratio),
         desired_accuracy=0.99,
         train_ratio=0.8,
         metrics=AccLoss(config['batch_size'], 'cel'),
@@ -109,7 +124,7 @@ for cluster, client_ids in clustered_clients.items():
         trainers_data_dict=tools.dict_select(client_ids, client_data)
     )
 
-    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED]))
     federated.init()
     clustered_federated[cluster] = federated
 
@@ -120,7 +135,7 @@ while not all(finished_tasks):
         finished_tasks[index] = federated.one_round()
 
 runs = fedruns.FedRuns(clustered_federated)
-runs.plot_avg()
+# runs.plot_avg()
 
 avg_acc, avg_loss = runs.avg()
-files.accuracies.append('clusters', avg_acc)
+files.accuracies.append(args.tag, list(avg_acc.values()))

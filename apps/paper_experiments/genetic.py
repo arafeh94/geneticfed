@@ -7,8 +7,10 @@ from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
+from apps.paper_experiments import federated_args
 from src import manifest
 from src.apis import files
+from src.data.data_loader import preload
 from src.federated.subscribers import Timer
 
 sys.path.append(dirname(__file__) + '../')
@@ -24,18 +26,30 @@ from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
 from src.data import data_generator, data_loader
 
+args = federated_args.FederatedArgs({
+    'epoch': 10,
+    'batch': 50,
+    'round': 3,
+    'shard': 2,
+    'dataset': 'mnist',
+    'clients_ratio': 0.1,
+    'learn_rate': 0.1,
+    'tag': 'genetic',
+})
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_10shards_100c_400min_400max()
+client_data = preload(f'mnist_{args.shard}shards_100c_600min_600max', args.dataset,
+                      lambda dg: dg.distribute_shards(100, args.shard, 600, 600))
 logger.info('Generating Data --Ended')
 
 config = {
-    'batch_size': 50,
-    'epochs': 50,
-    'clients_per_round': 0.2,
-    'num_rounds': 10,
+    'batch_size': args.batch,
+    'epochs': args.epoch,
+    'clients_per_round': args.clients_ratio,
+    'num_rounds': args.round,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
     'model': lambda: LogisticRegression(28 * 28, 10),
@@ -55,11 +69,12 @@ initial_model = initializer.ga_module_creator(
     r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
     c_size=config['ga_c_size'], p_size=config['ga_p_size'],
     clusters=config['nb_clusters'],
-    desired_fitness=config['ga_min_fitness'], epoch=200, batch=50
+    desired_fitness=config['ga_min_fitness'], epoch=200, batch=50,
+    saved_models=f'./saved_models_{args.shard}'
 )
 
 trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=config['epochs'],
-                               batch_size=config['batch_size'], criterion='cel', lr=0.1)
+                               batch_size=config['batch_size'], criterion='cel', lr=args.learn_rate)
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
     trainer_config=trainer_params,
@@ -78,9 +93,9 @@ federated = FederatedLearning(
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND, Timer.AGGREGATION, Timer.TRAINING]))
 # federated.add_subscriber(subscribers.FedPlot())
-federated.add_subscriber(subscribers.FedSave('genetic'))
+federated.add_subscriber(subscribers.FedSave(args.tag))
 logger.info("----------------------")
 logger.info(f"start federated 1")
 logger.info("----------------------")
 federated.start()
-files.accuracies.save_accuracy(federated, 'genetic')
+files.accuracies.save_accuracy(federated, args.tag)

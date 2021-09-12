@@ -127,15 +127,19 @@ class Serializable:
 
     def save(self):
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
-        pickle.dump(self.__dict__, open(self.file_path, 'wb'))
+        to_save = {}
+        for key, item in self.__dict__.items():
+            if not callable(item):
+                to_save[key] = item
+        pickle.dump(to_save, open(self.file_path, 'wb'))
 
     def load(self):
         if os.path.exists(self.file_path):
             try:
-                self.__dict__ = pickle.load(open(self.file_path, 'rb'))
+                for key, item in pickle.load(open(self.file_path, 'rb')).items():
+                    self.__dict__[key] = item
             except Exception as e:
                 print(e)
-
 
 
 class TorchModel:
