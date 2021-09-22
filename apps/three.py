@@ -1,5 +1,7 @@
 import copy
 
+import matplotlib.pyplot as plt
+
 from libs.model.linear.lr import LogisticRegression
 from src import tools
 from src.apis import lambdas
@@ -7,6 +9,7 @@ from src.data.data_loader import preload
 
 clients_data = preload('xs', 'mnist', lambda dg: dg.distribute_shards(10, 1, 600, 600)).map(lambdas.dc_split(0.1, 1))
 test_data = preload('xs', 'mnist', lambda dg: dg.distribute_shards(10, 1, 600, 600)).map(lambdas.dc_split(0.1, 0))
+print(clients_data)
 
 clients_model = {}
 client_samples = {}
@@ -31,12 +34,16 @@ def get_client_aggregated_model(cid, rdx):
 for round_id in range(5):
     for client_id, data in clients_data.items():
         client_model = get_client_aggregated_model(client_id, round_id)
-        tools.train(client_model, data.map(lambda x, y: (x, 0)).batch(50), epochs=50)
+        tools.train(client_model, data.map(lambda x, y: (x, 0)).batch(50), epochs=5)
         clients_model[client_id] = client_model
         clients_weights[client_id] = client_model.state_dict()
         client_samples[client_id] = 600
 
-# for cid, model in clients_model.items():
-# print(tools.infer(model, clients_data[cid].map(lambda x, y: (x, 0)).batch(50)))
+for cid, model in clients_model.items():
+    print(tools.infer(model, test_data[cid].map(lambda x, y: (x, 0)).batch(50)))
 
-print(tools.infer(clients_model[0], test_data[1].map(lambda x, y: (x, 1)).batch(50)))
+# print(tools.infer(clients_model[0], test_data[1].map(lambda x, y: (x, 0)).batch(50)))
+wgs = [tools.compress(w['linear.weight'], 2, 2) for w in clients_weights.values()]
+print(wgs)
+plt.plot(wgs)
+plt.show()
