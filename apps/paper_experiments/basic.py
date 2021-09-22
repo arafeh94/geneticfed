@@ -18,12 +18,12 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer
+from src.federated.subscribers import Timer, ShowWeightDivergence
 
 args = federated_args.FederatedArgs({
-    'epoch': 10,
-    'batch': 50,
-    'round': 3,
+    'epoch': 1,
+    'batch': 9999,
+    'round': 50,
     'shard': 2,
     'dataset': 'mnist',
     'clients_ratio': 0.1,
@@ -52,12 +52,14 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(args.clients_ratio),
     trainers_data_dict=client_data,
     initial_model=lambda: initial_model,
-    num_rounds=3,
+    num_rounds=args.round,
     desired_accuracy=0.99,
 )
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(subscribers.FedSave(args.tag))
+federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag='basic_sgd2'))
+
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

@@ -41,6 +41,12 @@ def build(hyper_params: Dict[str, List[int]], num_runs=0):
     return generated_params
 
 
+def foreach(hyper_params: Dict[str, List[int]], func, num_runs=0):
+    test_cases = build(hyper_params)
+    for tc in test_cases:
+        func(tc)
+
+
 def calculate_max_rounds(hyper_params: Dict[str, List[int]]):
     max_rounds = 1
     for param, value in hyper_params.items():

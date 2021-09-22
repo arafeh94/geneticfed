@@ -141,6 +141,11 @@ class Serializable:
             except Exception as e:
                 print(e)
 
+    def sync(self, func, *params):
+        self.load()
+        func(*params)
+        self.save()
+
 
 class TorchModel:
     def __init__(self, model):

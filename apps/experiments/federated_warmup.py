@@ -17,13 +17,13 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer
+from src.federated.subscribers import Timer, ShowWeightDivergence
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_10shards_100c_400min_400max()
+client_data = preload(f'mnist_10shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 10, 600, 600))
 # client_data = preload('mnist_2shards_100c_600min_600max', 'mnist', lambda dg: dg.distribute_shards(100, 2, 600, 600))
 # warmup_client_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.05)[0]).reduce(lambdas.dict2dc).as_tensor()
 # task_client_data = client_data.map(lambda ci, dc: dc.shuffle(42).split(0.05)[1]).map(lambdas.as_tensor)
@@ -45,16 +45,16 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(0.1),
     trainers_data_dict=client_data,
     initial_model=lambda: initial_model,
-    num_rounds=100,
+    num_rounds=50,
     desired_accuracy=0.99,
 )
 # federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedSave('basic'))
-# federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir="./pct", plot_type='linear'))
+# federated.add_subscriber(subscribers.FedSave('basic'))
+# federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag='warmup'))
+federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
-files.accuracies.save_accuracy(federated, 'basic')

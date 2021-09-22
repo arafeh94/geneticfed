@@ -29,7 +29,6 @@ def linear(id_weights: dict, title="", xlabel="", file_path=None):
     plt.title(title)
     plt.xlabel(xlabel)
     for id, weight in id_weights.items():
-        weight = tools.compress(weight, 10, 1)
         plt.plot(weight)
     if file_path is not None:
         plt.savefig(file_path)

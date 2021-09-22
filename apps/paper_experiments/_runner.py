@@ -1,35 +1,58 @@
+import multiprocessing
 import os
 
 from tqdm import tqdm
 
-from src.apis import test_cases
+from src.apis import test_cases, files
 
-sgd_tests = test_cases.build({
-    'epoch': [1],
-    'batch': [9999],
-    'round': [50, 100],
-    'client_ratio': [0.1, 0.2, 0.5, 1],
-    'dataset': ['mnist'],
-    'tag': ['basic', 'cluster', 'warmup', 'genetic'],
-    'shard': [2, 4, 10]
-})
 
-for test in tqdm(sgd_tests):
-    print(test)
-    os.system(f"py {test['tag']}.py  -e {test['epoch']} -b {test['batch']} -r {test['round']} "
-              f"-s {test['shard']} -d {test['dataset']} -cr {test['client_ratio']} -lr 0.1 -t {test['tag']}")
+#
+# sgd_tests = test_cases.build({
+#     'epoch': [1],
+#     'batch': [9999],
+#     'round': [50, 100],
+#     'client_ratio': [0.1, 0.2, 0.5, 1],
+#     'dataset': ['mnist'],
+#     'tag': ['basic', 'cluster', 'warmup', 'genetic'],
+#     'shard': [2, 4, 10]
+# })
+#
+# for test in tqdm(sgd_tests):
+#     print(test)
+#     os.system(f"py {test['tag']}.py  -e {test['epoch']} -b {test['batch']} -r {test['round']} "
+#               f"-s {test['shard']} -d {test['dataset']} -cr {test['client_ratio']} -lr 0.1 -t {test['tag']}")
+
+def build_tag(args):
+    return f'{args["tag"]}_e{args["epoch"]}_b{args["batch"]}_r{args["round"]}_s{args["shard"]}' \
+           f'_{args["dataset"]}_cr{str(args["client_ratio"]).replace(".", "")}' \
+           f'_lr01 '.replace('cr1', 'cr10')
+
+
+a = files.accuracies.get_saved_accuracy()
+
+
+def run_command(test):
+    save_tag = build_tag(test)
+    if save_tag not in files.accuracies.get_saved_accuracy():
+        print(f'Executing: {save_tag}')
+        os.system(f"py {test['tag']}.py  -e {test['epoch']} -b {test['batch']} -r {test['round']} "
+                  f"-s {test['shard']} -d {test['dataset']} -cr {test['client_ratio']} -lr 0.1 -t {test['tag']}")
+    else:
+        print("Experiments already executed, skip.")
+
 
 all_tests = test_cases.build({
     'epoch': [50, 100],
     'batch': [50],
-    'round': [50, 100],
+    'round': [50],
     'client_ratio': [0.1, 0.2, 0.5, 1],
     'dataset': ['mnist'],
     'tag': ['basic', 'cluster', 'warmup', 'genetic'],
-    'shard': [2, 4, 10]
+    'shard': [2, 10]
 })
 
-for test in tqdm(all_tests):
-    print(test)
-    os.system(f"py {test['tag']}.py  -e {test['epoch']} -b {test['batch']} -r {test['round']} "
-              f"-s {test['shard']} -d {test['dataset']} -cr {test['client_ratio']} -lr 0.1 -t {test['tag']}")
+if __name__ == '__main__':
+    # pool = multiprocessing.Pool(2)
+    # pool.map(run_command, all_tests)
+    for t in all_tests:
+        run_command(t)
