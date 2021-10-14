@@ -64,6 +64,7 @@ class Distributor:
     def distribute_shards(self, num_clients, shards_per_client, min_size, max_size, is_random=False) -> Dict[
         int, DataContainer]:
         self.data = self.data.as_numpy()
+        self.log(f'distributing {self.data}', level=0)
         clients_data = defaultdict(list)
         grouper = self.Grouper(self.data.x, self.data.y)
         for client_id in range(num_clients):
@@ -74,9 +75,10 @@ class Distributor:
             client_x = []
             client_y = []
             for shard in selected_shards:
-                rx, ry = grouper.get(shard, int(client_data_size / len(selected_shards)))
+                selected_data_size = int(client_data_size / len(selected_shards)) or 1
+                rx, ry = grouper.get(shard, selected_data_size)
                 if len(rx) == 0:
-                    self.log(f'shard {round(shard)} have no more available data to distribute, skipping...')
+                    self.log(f'shard {round(shard)} have no more available data to distribute, skipping...', level=0)
                 else:
                     client_x = rx if len(client_x) == 0 else np.concatenate((client_x, rx))
                     client_y = ry if len(client_y) == 0 else np.concatenate((client_y, ry))
@@ -101,6 +103,9 @@ class Distributor:
             return selected_labels
 
         def next(self):
+            if len(self.all_labels) == 0:
+                raise Exception('no more data available to distribute')
+
             temp = 0 if self.label_cursor >= len(self.all_labels) else self.label_cursor
             self.label_cursor = (self.label_cursor + 1) % len(self.all_labels)
             return self.all_labels[temp]

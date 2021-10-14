@@ -1,10 +1,8 @@
 # mpiexec -n 11 python distributed.py
 import sys
 from os.path import dirname
-
+sys.path.append(dirname(__file__) + '../../')
 from src.federated.subscribers import Timer
-
-sys.path.append(dirname(__file__) + '../')
 import logging
 from torch import nn
 import src

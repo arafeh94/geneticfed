@@ -13,6 +13,10 @@ class FederatedArgs:
                             default=defaults['clients_ratio'])
         parser.add_argument('-lr', '--learn_rate', type=float, help='learn rate', default=defaults['learn_rate'])
         parser.add_argument('-t', '--tag', type=str, help='tag to save the results', default=defaults['tag'])
+        parser.add_argument('-mn', '--min', type=str, help='minimum number of data', default=defaults['min'])
+        parser.add_argument('-mx', '--max', type=str, help='maximum number of data', default=defaults['max'])
+        parser.add_argument('-cln', '--clients_number', type=str, help='number of participating clients',
+                            default=defaults['clients'])
         args = parser.parse_args()
         self.epoch = args.epoch
         self.batch = args.batch
@@ -20,7 +24,15 @@ class FederatedArgs:
         self.shard = args.shard
         self.dataset = args.dataset
         self.clients_ratio = args.clients_ratio
+        self.min = args.min
+        self.max = args.max
+        self.clients = args.clients_number
         self.learn_rate = args.learn_rate
         self.tag = f'{args.tag}_e{self.epoch}_b{self.batch}_r{self.round}_s{self.shard}' \
                    f'_{self.dataset}_cr{str(self.clients_ratio).replace(".", "")}' \
-                   f'_lr{str(self.learn_rate).replace(".", "")} '
+                   f'_lr{str(self.learn_rate).replace(".", "")}'
+
+    def __repr__(self):
+        return f'{self.tag}_e{self.epoch}_b{self.batch}_r{self.round}_s{self.shard}' \
+               f'_{self.dataset}_cr{str(self.clients_ratio).replace(".", "")}' \
+               f'_lr{str(self.learn_rate)}'.replace('cr1', 'cr10')

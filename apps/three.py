@@ -42,8 +42,4 @@ for round_id in range(5):
 for cid, model in clients_model.items():
     print(tools.infer(model, test_data[cid].map(lambda x, y: (x, 0)).batch(50)))
 
-# print(tools.infer(clients_model[0], test_data[1].map(lambda x, y: (x, 0)).batch(50)))
-wgs = [tools.compress(w['linear.weight'], 2, 2) for w in clients_weights.values()]
-print(wgs)
-plt.plot(wgs)
-plt.show()
+print(tools.infer(clients_model[1], test_data[1].map(lambda x, y: (x, 1)).batch(50)))

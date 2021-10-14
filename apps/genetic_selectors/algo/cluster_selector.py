@@ -1,5 +1,5 @@
 class ClusterSelector:
-    def __init__(self, id_label_dict: dict):
+    def     __init__(self, id_label_dict: dict):
         """
         @param id_label_dict dictionary of user id, and the label of this user
         """

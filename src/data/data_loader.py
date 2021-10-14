@@ -28,9 +28,12 @@ def preload(name, dataset, distributor: typing.Callable[[DataGenerator], Dict[in
 
     """
     file_path = manifest.DATA_PATH + name + ".pkl"
+    logger.info(f'searching for {file_path}...')
     if os.path.exists(file_path):
         logger.info('distributed data file exists, loading...')
-        return src.data.data_generator.load(file_path).get_distributed_data()
+        distributed_data = src.data.data_generator.load(file_path).get_distributed_data()
+        logger.info(distributed_data)
+        return distributed_data
     else:
         logger.info('distributed data file does not exists, distributing...')
         data_provider = PickleDataProvider(urls[dataset])

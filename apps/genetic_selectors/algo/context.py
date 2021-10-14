@@ -26,7 +26,7 @@ class Context(Serializable):
         self.logging = logging.getLogger('context')
         self.load()
 
-    def train(self, ratio=0, epochs=100, batch=50):
+    def train(self, ratio=0, epochs=100, batch=50, lr=0.1):
         if len(self.models) > 0:
             self.logging.info("Models Loaded")
             return
@@ -41,7 +41,7 @@ class Context(Serializable):
                 data = DataContainer(new_x, new_y)
             self.logging.info(f"Building Models --ClientID{client_idx}")
             model = copy.deepcopy(self.init_model)
-            trained = tools.train(model, data.batch(batch), epochs=epochs)
+            trained = tools.train(model, data.batch(batch), epochs=epochs, lr=lr)
             self.model_stats[client_idx] = trained
             self.models[client_idx] = model
             self.sample_dict[client_idx] = len(data)
@@ -63,7 +63,7 @@ class Context(Serializable):
             weights.append(self.compress(tools.flatten_weights(stats))
                            if compress else tools.flatten_weights(stats))
         kmeans = KMeans(n_clusters=cluster_size).fit(weights)
-        print(kmeans.labels_.reshape(-1, 10))
+        print(kmeans.labels_.reshape(-1, cluster_size))
         for i, label in enumerate(kmeans.labels_):
             clustered[client_ids[i]] = label
         self.logging.info("Clustering Models --Finished")

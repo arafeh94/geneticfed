@@ -4,9 +4,10 @@ from collections import defaultdict
 from sklearn.cluster import AgglomerativeClustering
 
 from apps.paper_experiments import federated_args
+from libs.model.cv.cnn import Cifar10Model
 from libs.model.linear.lr import LogisticRegression
 from src import tools, manifest
-from src.apis import files
+from src.apis import files, lambdas
 from src.data import data_loader
 
 from src.data.data_container import DataContainer
@@ -24,21 +25,39 @@ from src.federated.protocols import TrainerParams
 args = federated_args.FederatedArgs({
     'epoch': 10,
     'batch': 50,
-    'round': 3,
+    'round': 100,
     'shard': 2,
     'dataset': 'mnist',
     'clients_ratio': 0.1,
     'learn_rate': 0.1,
     'tag': 'cluster',
+    'min': 600,
+    'max': 600,
+    'clients': 100,
 })
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload(f'mnist_{args.shard}shards_100c_600min_600max', args.dataset,
-                      lambda dg: dg.distribute_shards(100, args.shard, 600, 600))
+client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
+                      lambda dg: dg.distribute_shards(args.clients, args.shard, args.min, args.max))
 logger.info('Generating Data --Ended')
+
+if args.dataset == 'cifar10':
+    client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
+
+
+def create_model():
+    if args.dataset == 'mnist':
+        return LogisticRegression(28 * 28, 10)
+    elif args.dataset == 'cifar10':
+        return Cifar10Model()
+    else:
+        return LogisticRegression(28 * 28, 10)
+
+
+initial_model = create_model()
 
 config = {
     'batch_size': args.batch,
@@ -47,13 +66,13 @@ config = {
     'num_rounds': args.round,
     'desired_accuracy': 0.99,
     'nb_clusters': 10,
-    'model': lambda: LogisticRegression(28 * 28, 10),
+    'model': lambda: initial_model,
 
-    'clustering_num_rounds': 10,
+    'clustering_num_rounds': 2,
     'linkage': 'complete',
     'clustering_measuring_algo': 'cosine',
-    'update_data_ration': 0.1,
-    'clustering_data_ratio': 0.1,
+    'update_data_ration': 0.05,
+    'clustering_data_ratio': 0.05,
 }
 
 
@@ -80,7 +99,8 @@ federated_learning = FederatedLearning(
     metrics=AccLoss(config['batch_size'], 'cel'),
     aggregator=AVGAggregator(),
     initial_model=config['model'],
-    trainers_data_dict=cluster_data
+    trainers_data_dict=cluster_data,
+    accepted_accuracy_margin=0.05
 )
 
 federated_learning.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
@@ -121,7 +141,8 @@ for cluster, client_ids in clustered_clients.items():
         metrics=AccLoss(config['batch_size'], 'cel'),
         aggregator=AVGAggregator(),
         initial_model=lambda: global_model,
-        trainers_data_dict=tools.dict_select(client_ids, client_data)
+        trainers_data_dict=tools.dict_select(client_ids, client_data),
+        accepted_accuracy_margin=0.02
     )
 
     federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED]))

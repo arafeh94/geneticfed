@@ -3,7 +3,7 @@ import sys
 
 from torch import nn
 
-from libs.model.cv.cnn import CNN
+from src.data.data_loader import preload
 from src.data.data_provider import PickleDataProvider
 
 sys.path.append('../../')
@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_10shards_100c_400min_400max()
+client_data = preload('asd', 'cifar-10', lambda dg: dg.distribute_shards(200, 42, 10, 10))
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
