@@ -2,6 +2,7 @@ import logging
 import sys
 
 from libs.model.cv.cnn import Cifar10Model
+from src.data.data_distributor import ShardDistributor, LabelDistributor
 
 sys.path.append('../../')
 from libs.model.cv.resnet import ResNet, resnet56
@@ -40,7 +41,7 @@ logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
 client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      lambda dg: dg.distribute_shards(args.clients, args.shard, args.min, args.max))
+                      LabelDistributor(args.clients, args.shard, args.min, args.max))
 print(client_data)
 logger.info('Generating Data --Ended')
 
@@ -80,4 +81,4 @@ logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
-files.accuracies.save_accuracy(federated, args.tag)
+files.accuracies.save_accuracy(federated, str(args))

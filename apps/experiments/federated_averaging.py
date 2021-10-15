@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload('asd', 'cifar-10', lambda dg: dg.distribute_shards(200, 42, 10, 10))
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
@@ -38,6 +38,7 @@ federated = FederatedLearning(
     initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=50,
     desired_accuracy=0.99,
+    accepted_accuracy_margin=0.01
 )
 
 # federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))

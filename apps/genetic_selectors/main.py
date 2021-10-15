@@ -7,6 +7,7 @@ from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
+from src.data import data_loader
 from src.federated.subscribers import Timer
 
 sys.path.append(dirname(__file__) + '../')
@@ -20,7 +21,6 @@ from src.federated import subscribers, fedruns
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
-from src.data import data_generator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
@@ -33,9 +33,7 @@ model = lambda: LogisticRegression(28 * 28, 10)
 data_file = '../../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
 
 logger.info('Generating Data --Started')
-dg = data_generator.load(data_file)
-client_data = dg.distributed
-dg.describe()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 configs = {
@@ -45,7 +43,6 @@ configs = {
         'clients_per_round': clients_per_round,
         'num_rounds': num_rounds,
         'desired_accuracy': 0.99,
-        'test_on': FederatedLearning.TEST_ON_ALL,
         'model': model,
         'ga_max_iter': 10,
         'ga_r_cross': 0.05,
@@ -61,7 +58,6 @@ configs = {
         'clients_per_round': clients_per_round,
         'num_rounds': num_rounds,
         'desired_accuracy': 0.99,
-        'test_on': FederatedLearning.TEST_ON_ALL,
         'model': model,
     },
     # 'clustered': {
@@ -81,7 +77,6 @@ configs = {
         'clients_per_round': clients_per_round,
         'num_rounds': num_rounds,
         'desired_accuracy': 0.99,
-        'test_on': FederatedLearning.TEST_ON_ALL,
         'model': model,
     }
 

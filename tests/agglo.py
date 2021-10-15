@@ -15,8 +15,24 @@ from sklearn.cluster import AgglomerativeClustering
 from libs.model.dqn import DeepQNetwork
 from libs.model.linear.lr import LogisticRegression
 from src import tools
-from src.data.data_generator import DataGenerator
+from src.data import data_loader
 from src.data.data_provider import PickleDataProvider
+
+history = {
+    0:
+        {
+            'acc': 1
+        }
+    ,
+    1:
+        {
+            'acc': 2
+        }
+
+}
+print(history[list(history)[-1]]['acc'])
+
+exit(1)
 
 
 def compress(weights):
@@ -27,8 +43,7 @@ def compress(weights):
     return weights.flatten()
 
 
-clients_data = DataGenerator(PickleDataProvider('../../datasets/pickles/mnist10k.pkl')) \
-    .distribute_shards(30, 1, 100, 100)
+clients_data = data_loader.mnist_10shards_100c_400min_400max()
 tools.detail(clients_data, display=lambda x: print(x))
 client_weights = {}
 client_weights_c = {}

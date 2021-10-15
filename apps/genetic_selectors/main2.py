@@ -22,7 +22,7 @@ from src.federated import subscribers, fedruns
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
-from src.data import data_generator, data_loader
+from src.data import data_loader
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')

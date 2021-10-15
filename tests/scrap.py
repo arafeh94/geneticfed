@@ -1,5 +1,7 @@
-import numpy as np
+from numpy.random import random
 
-a = ['samira']
+from src.data import data_loader
+from src.data.data_distributor import LabelDistributor, UniqueDistributor, ShardDistributor
 
-print(np.any(a))
+clients_data = data_loader.preload('111_' + str(random()), 'mnist', ShardDistributor(300, 2))
+print(clients_data)

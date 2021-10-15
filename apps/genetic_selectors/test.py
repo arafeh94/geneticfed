@@ -9,7 +9,7 @@ from src.data.data_container import DataContainer
 
 sys.path.append(dirname(__file__) + '../')
 
-from src.data import data_generator, data_loader
+from src.data import data_loader
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')

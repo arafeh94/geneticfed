@@ -84,10 +84,11 @@ class FederatedLearning(Broadcaster):
         self.broadcast(Events.ET_AGGREGATION_END, global_weights=global_weights, global_model=self.context.model)
         accuracy, loss, local_acc, local_loss = self.infer(temporary_model, self.test_data)
         model_status = self.context.update_model(temporary_model, accuracy, self.accepted_accuracy_margin)
-        self.context.store(status=model_status)
-        self.broadcast(Events.ET_MODEL_STATUS, model_status=model_status)
+        self.broadcast(Events.ET_MODEL_STATUS, model_status=model_status, accuracy=accuracy)
+        accuracy = accuracy if model_status else self.context.highest_accuracy()
         self.broadcast(Events.ET_ROUND_FINISHED, round=self.context.round_id, accuracy=accuracy, loss=loss,
                        local_acc=local_acc, local_loss=local_loss)
+        self.context.store(acc=accuracy, loss=loss, local_acc=local_acc, local_loss=local_loss, status=model_status)
         self.context.new_round()
         is_done = self.context.stop(accuracy)
         if is_done:
@@ -120,7 +121,6 @@ class FederatedLearning(Broadcaster):
             weighted_loss = [local_loss[tid] * sample_size[tid] for tid in local_loss]
             total_accuracy = sum(weighted_accuracy) / sum(sample_size.values())
             total_loss = sum(weighted_loss) / sum(sample_size.values())
-            self.context.store(acc=total_accuracy, loss=total_loss, local_acc=local_accuracy, local_loss=local_loss)
             return total_accuracy, total_loss, local_accuracy, local_loss
 
     def compare(self, other, verbose=1):
@@ -198,6 +198,11 @@ class FederatedLearning(Broadcaster):
             if len(self.history) == 0:
                 return 0
             return self.history[max(self.history, key=lambda k: self.history[k]['acc'])]['acc']
+
+        def latest_accuracy(self):
+            if len(self.history) == 0:
+                return 0
+            return self.history[list(self.history)[-1]]['acc']
 
         def stop(self, acc: float):
             return (0 < self.num_rounds <= self.round_id) or acc >= self.desired_accuracy

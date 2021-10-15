@@ -11,6 +11,7 @@ from src.apis import files, lambdas
 from src.data import data_loader
 
 from src.data.data_container import DataContainer
+from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 from src.federated import subscribers, fedruns
 from src.federated.components import params, client_selectors
@@ -41,7 +42,7 @@ logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
 client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      lambda dg: dg.distribute_shards(args.clients, args.shard, args.min, args.max))
+                      LabelDistributor(args.clients, args.shard, args.min, args.max))
 logger.info('Generating Data --Ended')
 
 if args.dataset == 'cifar10':
@@ -100,7 +101,7 @@ federated_learning = FederatedLearning(
     aggregator=AVGAggregator(),
     initial_model=config['model'],
     trainers_data_dict=cluster_data,
-    accepted_accuracy_margin=0.05
+    # accepted_accuracy_margin=0.05
 )
 
 federated_learning.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
@@ -142,7 +143,7 @@ for cluster, client_ids in clustered_clients.items():
         aggregator=AVGAggregator(),
         initial_model=lambda: global_model,
         trainers_data_dict=tools.dict_select(client_ids, client_data),
-        accepted_accuracy_margin=0.02
+        # accepted_accuracy_margin=0.02
     )
 
     federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED]))
@@ -159,4 +160,4 @@ runs = fedruns.FedRuns(clustered_federated)
 # runs.plot_avg()
 
 avg_acc, avg_loss = runs.avg()
-files.accuracies.append(args.tag, list(avg_acc.values()))
+files.accuracies.append(str(args), list(avg_acc.values()))

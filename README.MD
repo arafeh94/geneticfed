@@ -210,17 +210,13 @@ dataset. Using federated learning, we should test the model creation under these
 Different scenario could be tested and generating these scenarios can take a lot of work. And this only for mnist
 dataset without considering working with other datasets.
 
-To solve this issue we create a DataGenerator class that can help to generate data based on the listed scenarios. It is
+To solve this issue we create a [deleted] class that can help to generate data based on the listed scenarios. It is
 also capable of saving the distributed data and load it for the next because distributing data take a lot of time.
 
 ### Example
 
 ```python
-from src.data.data_generator import DataGenerator
-from src.data.data_provider import LocalMnistDataProvider
-import src.data.data_generator
-
-dg = DataGenerator(LocalMnistDataProvider())
+dg = [changed]
 # distribute mnist data into 70 clients each have 2 labels and 600 records
 dg.distribute_shards(num_clients=70, shards_per_client=2, min_size=600, max_size=600, verbose=1)
 # save the data to file
@@ -228,7 +224,7 @@ dg.save('./pickles/70_2_600_mnist.pkl')
 
 # when you want to use the data
 # load the data from file
-dg = src.data.data_generator.load('./pickles/70_2_600_mnist.pkl')
+dg = [load data]
 # your data exists in the distributed variable of the data generator instance
 client_data = dg.distributed
 ```

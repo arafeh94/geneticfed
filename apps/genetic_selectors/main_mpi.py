@@ -5,10 +5,10 @@ from os.path import dirname
 
 from torch import nn
 
+from src.data import data_loader
 from src.federated.subscribers import Timer
 
 sys.path.append(dirname(__file__) + '../../')
-from src.data import data_generator
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
@@ -34,9 +34,7 @@ if comm.pid() == 0:
     test_file = '../../datasets/pickles/test_data.pkl'
 
     logger.info('Generating Data --Started')
-    dg = data_generator.load(data_file)
-    client_data = dg.distributed
-    dg.describe()
+    client_data = data_loader.mnist_10shards_100c_400min_400max()
     logger.info('Generating Data --Ended')
 
     configs = {
@@ -46,7 +44,6 @@ if comm.pid() == 0:
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
-            'test_on': FederatedLearning.TEST_ON_ALL,
             'model': model,
             'ga_max_iter': 10,
             'ga_r_cross': 0.05,
@@ -62,7 +59,6 @@ if comm.pid() == 0:
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
-            'test_on': FederatedLearning.TEST_ON_ALL,
             'model': model,
         },
         'clustered': {
@@ -71,7 +67,6 @@ if comm.pid() == 0:
             'clients_per_round': clients_per_round,
             'num_rounds': num_rounds,
             'desired_accuracy': 0.99,
-            'test_on': FederatedLearning.TEST_ON_ALL,
             'model': model,
             'c_size': 10,
             'nb_clusters': 10,
@@ -92,7 +87,8 @@ if comm.pid() == 0:
                                                                config['c_size'])
 
         trainer_manager = MPITrainerManager()
-        trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
+        trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=epochs,
+                                       batch_size=batch_size,
                                        criterion='cel', lr=0.1)
         federated = FederatedLearning(
             trainer_manager=trainer_manager,
@@ -104,7 +100,6 @@ if comm.pid() == 0:
             initial_model=initial_model,
             num_rounds=config['num_rounds'],
             desired_accuracy=config['desired_accuracy'],
-            test_on=FederatedLearning.TEST_ON_ALL
         )
 
         federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))

@@ -25,8 +25,7 @@ tag = 'federated_test_basic_2'
 is_warmup = True
 
 logger.info('Generating Data --Started')
-shards = 2
-client_data = preload(f'cached_warmup_test_{shards}', 'mnist', lambda dg: dg.distribute_shards(100, shards, 600, 600))
+client_data = data_loader.mnist_2shards_100c_600min_600max()
 logger.info('Generating Data --Ended')
 
 if is_warmup:

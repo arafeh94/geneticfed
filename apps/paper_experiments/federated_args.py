@@ -28,9 +28,7 @@ class FederatedArgs:
         self.max = args.max
         self.clients = args.clients_number
         self.learn_rate = args.learn_rate
-        self.tag = f'{args.tag}_e{self.epoch}_b{self.batch}_r{self.round}_s{self.shard}' \
-                   f'_{self.dataset}_cr{str(self.clients_ratio).replace(".", "")}' \
-                   f'_lr{str(self.learn_rate).replace(".", "")}'
+        self.tag = args.tag
 
     def __repr__(self):
         return f'{self.tag}_e{self.epoch}_b{self.batch}_r{self.round}_s{self.shard}' \

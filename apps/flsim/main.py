@@ -4,7 +4,7 @@ from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
-from src.data import data_generator
+from src.data import data_loader
 from src.federated.components import metrics, aggregators, trainers
 from libs.model.linear.lr import LogisticRegression
 from src.federated import subscribers
@@ -20,9 +20,7 @@ logger = logging.getLogger('main')
 data_file = '../../datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl'
 
 logger.info('Generating Data --Started')
-dg = data_generator.load(data_file)
-client_data = dg.distributed
-dg.describe()
+client_data = data_loader.mnist_10shards_100c_400min_400max()
 logger.info('Generating Data --Ended')
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=20, optimizer='sgd',

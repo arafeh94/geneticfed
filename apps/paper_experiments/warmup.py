@@ -4,16 +4,15 @@ import sys
 from apps.paper_experiments import federated_args
 from libs.model.cv.cnn import Cifar10Model
 from src import tools
+from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 
 sys.path.append('../../')
 
-from typing import Callable
 from torch import nn
 from src.apis import lambdas, files
 from src.apis.extensions import TorchModel
 from libs.model.linear.lr import LogisticRegression
-from src.data import data_loader
 from src.federated.components import metrics, client_selectors, aggregators, trainers
 from src.federated import subscribers
 from src.federated.federated import Events
@@ -41,7 +40,7 @@ logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
 client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      lambda dg: dg.distribute_shards(args.clients, args.shard, args.min, args.max))
+                      LabelDistributor(args.clients, args.shard, args.min, args.max))
 logger.info('Generating Data --Ended')
 
 if args.dataset == 'mnist':
@@ -71,12 +70,12 @@ federated = FederatedLearning(
     initial_model=lambda: initial_model,
     num_rounds=args.round,
     desired_accuracy=0.99,
-    accepted_accuracy_margin=0.02
+    # accepted_accuracy_margin=0.02
 )
 # federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedSave(args.tag))
+federated.add_subscriber(subscribers.FedSave(str(args)))
 # federated.add_subscriber(
 #     ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=f'warmup_sgd{args.shard}'))
 
@@ -84,4 +83,4 @@ logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
-files.accuracies.save_accuracy(federated, args.tag)
+files.accuracies.save_accuracy(federated, str(args))
