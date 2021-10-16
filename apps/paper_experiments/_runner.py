@@ -43,12 +43,12 @@ def run_command(execution, force=False):
 
 
 all_tests = test_cases.build({
-    'epoch': [25],
+    'epoch': [5],
     'batch': [50],
-    'round': [200],
-    'client_ratio': [0.1, 0.2],
+    'round': [500],
+    'client_ratio': [0.1],
     'dataset': ['cifar10'],
-    'learn_rate': [0.001, 0.01],
+    'learn_rate': [0.001],
     'tag': ['basic', 'warmup', 'genetic', 'cluster'],
     # 'tag': ['genetic'],
     'shard': [2, 4]
@@ -58,4 +58,4 @@ if __name__ == '__main__':
     # pool = multiprocessing.Pool(2)
     # pool.map(run_command, all_tests)
     for t in all_tests:
-        run_command(t, True)
+        run_command(t)

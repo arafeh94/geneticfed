@@ -338,16 +338,18 @@ class MPIStopPlug(FederatedEventPlug):
 
 
 class Resumable(FederatedEventPlug):
-    def __init__(self, tag, federated: FederatedLearning, verbose=1, flush=False):
+    def __init__(self, federated: FederatedLearning, verbose=logging.INFO):
         super().__init__()
         os.makedirs(manifest.ROOT_PATH + "/checkpoints", exist_ok=True)
         self.federated = federated
-        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + tag + ".fed"
+        self.file_name = None
         self.verbose = verbose
-        self.flush = flush
+        self.logger = logging.getLogger('resumable')
 
     def on_init(self, params):
-        if os.path.exists(self.file_name) and not self.flush:
+        context: FederatedLearning.Context = params['context']
+        self.file_name = manifest.ROOT_PATH + "/checkpoints" + "/run_" + context.id + ".fed"
+        if os.path.exists(self.file_name):
             self.log('found a checkpoint, loading...')
             file = open(self.file_name, 'rb')
             loaded = pickle.load(file)
@@ -368,8 +370,8 @@ class Resumable(FederatedEventPlug):
         file.close()
 
     def log(self, msg):
-        if self.verbose == 1:
-            logging.getLogger('resumable').info(msg)
+        self.logger.log(self.verbose, msg)
+
 
 
 class ShowDataDistribution(FederatedEventPlug):
