@@ -1,7 +1,9 @@
 import copy
 import logging
+import sys
 from collections import defaultdict
 from sklearn.cluster import AgglomerativeClustering
+sys.path.append('../../')
 
 from apps.paper_experiments import federated_args
 from libs.model.cv.cnn import Cifar10Model

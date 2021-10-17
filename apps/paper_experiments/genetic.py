@@ -1,7 +1,7 @@
 # mpiexec -n 4 python main_mpi.py
 import logging
 import sys
-from os.path import dirname
+sys.path.append('../../')
 
 from torch import nn
 
@@ -16,7 +16,6 @@ from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
 
-sys.path.append(dirname(__file__) + '../')
 
 from libs.model.cv.resnet import ResNet, resnet56
 from libs.model.linear.lr import LogisticRegression

@@ -1,10 +1,9 @@
 import logging
 import sys
-
+sys.path.append('../../')
 from libs.model.cv.cnn import Cifar10Model
 from src.data.data_distributor import ShardDistributor, LabelDistributor
 
-sys.path.append('../../')
 from libs.model.cv.resnet import ResNet, resnet56
 from apps.paper_experiments import federated_args
 from src.data.data_loader import preload

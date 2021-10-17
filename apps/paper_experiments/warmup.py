@@ -1,5 +1,6 @@
 import logging
 import sys
+sys.path.append('../../')
 
 from apps.paper_experiments import federated_args
 from libs.model.cv.cnn import Cifar10Model
@@ -7,7 +8,6 @@ from src import tools
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 
-sys.path.append('../../')
 
 from torch import nn
 from src.apis import lambdas, files
