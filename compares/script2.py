@@ -6,10 +6,9 @@ import src.tools as tools
 
 
 def fil(item: str):
-    return item.endswith('e25_b50_r200_s4_cifar10_cr01_lr0.001')
+    return item.endswith('e5_b50_r500_s10_cifar10_cr02_lr0.001')
 
 
-print(fl.accuracies.get_saved_accuracy().keys())
+for k in fl.accuracies.get_saved_accuracy().keys():
+    print(k)
 fl.accuracies.show_saved_accuracy_plot(fil)
-
-plt.show()

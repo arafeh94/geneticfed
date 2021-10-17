@@ -26,11 +26,11 @@ from src.federated.protocols import TrainerParams
 args = federated_args.FederatedArgs({
     'epoch': 10,
     'batch': 50,
-    'round': 100,
+    'round': 500,
     'shard': 2,
-    'dataset': 'mnist',
+    'dataset': 'cifar10',
     'clients_ratio': 0.1,
-    'learn_rate': 0.1,
+    'learn_rate': 0.001,
     'tag': 'cluster',
     'min': 600,
     'max': 600,
@@ -41,8 +41,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      LabelDistributor(args.clients, args.shard, args.min, args.max))
+client_data = preload(args.dataset, LabelDistributor(args.clients, args.shard, args.min, args.max))
 logger.info('Generating Data --Ended')
 
 if args.dataset == 'cifar10':
@@ -128,12 +127,12 @@ logger.info(cluster_dist)
 clustered_federated = {}
 for cluster, client_ids in clustered_clients.items():
     logger.info(f'cluster:{cluster}-clients:{client_ids}')
-    if len(client_ids) < 3:
-        logger.info("can't run federated learning with less than 3 clients")
+    if len(client_ids) < 1:
+        logger.info("can't run federated learning with less than 1 clients")
         continue
     federated = FederatedLearning(
         trainer_manager=SeqTrainerManager(),
-        trainer_config=TrainerParams(trainer_class=TorchChunkTrainer, batch_size=args.batch, epochs=args.epoch,
+        trainer_config=TrainerParams(trainer_class=TorchTrainer, batch_size=args.batch, epochs=args.epoch,
                                      criterion='cel', optimizer='sgd', lr=args.learn_rate),
         num_rounds=config['num_rounds'],
         client_selector=client_selectors.Random(args.clients_ratio),

@@ -19,7 +19,7 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer, ShowWeightDivergence
+from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
 
 args = federated_args.FederatedArgs({
     'epoch': 25,
@@ -39,8 +39,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      LabelDistributor(args.clients, args.shard, args.min, args.max))
+dist = LabelDistributor(args.clients, args.shard, args.min, args.max)
+client_data = preload(args.dataset, dist)
 logger.info('Generating Data --Ended')
 
 if args.dataset == 'mnist':
@@ -72,10 +72,13 @@ federated = FederatedLearning(
     desired_accuracy=0.99,
     # accepted_accuracy_margin=0.02
 )
-# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
-federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+
+federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(subscribers.FedSave(str(args)))
+federated.add_subscriber(Resumable(federated, dist, 'warmup_02cr'))
+
+# federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
+# federated.add_subscriber(subscribers.FedSave(str(args)))
 # federated.add_subscriber(
 #     ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=f'warmup_sgd{args.shard}'))
 

@@ -20,14 +20,14 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer, ShowWeightDivergence
+from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
 
 args = federated_args.FederatedArgs({
     'epoch': 25,
     'batch': 50,
     'round': 200,
     'shard': 2,
-    'dataset': 'mnist',
+    'dataset': 'cifar10',
     'clients_ratio': 0.1,
     'learn_rate': 0.1,
     'tag': 'basic',
@@ -40,8 +40,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      LabelDistributor(args.clients, args.shard, args.min, args.max))
+dist = LabelDistributor(args.clients, args.shard, args.min, args.max)
+client_data = preload(args.dataset, dist)
 print(client_data)
 logger.info('Generating Data --Ended')
 
@@ -68,14 +68,15 @@ federated = FederatedLearning(
     desired_accuracy=0.99,
     # accepted_accuracy_margin=0.02
 )
-federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-# federated.add_subscriber(subscribers.FedPlot(show_loss=False, plot_each_round=True))
+federated.add_subscriber(Resumable(federated, dist, 'basic_02cr'))
 
+# federated.add_subscriber(subscribers.FedPlot(show_loss=False, plot_each_round=True))
 # federated.add_subscriber(subscribers.FedSave(args.tag))
 # federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=f'basic_sgd{args.shard}'))
-federated.add_subscriber(subscribers.ShowAvgWeightDivergence(plot_each_round=False, save_dir="./pct",
-                                                             divergence_tag='div_' + str(args)))
+# federated.add_subscriber(subscribers.ShowAvgWeightDivergence(plot_each_round=False, save_dir="./pct",
+#                                                              divergence_tag='div_' + str(args)))
 
 logger.info("----------------------")
 logger.info("start federated 1")

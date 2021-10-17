@@ -1,5 +1,8 @@
 from src.apis import test_cases, files
 
+files.accuracies.get_saved_accuracy()
+exit()
+
 all_tests = test_cases.build({
     'epoch': [25],
     'batch': [50],

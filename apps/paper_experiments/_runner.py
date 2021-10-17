@@ -46,12 +46,11 @@ all_tests = test_cases.build({
     'epoch': [5],
     'batch': [50],
     'round': [500],
-    'client_ratio': [0.1],
+    'client_ratio': [0.2],
     'dataset': ['cifar10'],
     'learn_rate': [0.001],
     'tag': ['basic', 'warmup', 'genetic', 'cluster'],
-    # 'tag': ['genetic'],
-    'shard': [2, 4]
+    'shard': [2, 4, 10]
 })
 
 if __name__ == '__main__':

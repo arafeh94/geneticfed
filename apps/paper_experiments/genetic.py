@@ -14,7 +14,7 @@ from src.apis import files, lambdas
 from src.apis.extensions import TorchModel
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
-from src.federated.subscribers import Timer, ShowWeightDivergence
+from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
 
 sys.path.append(dirname(__file__) + '../')
 
@@ -47,8 +47,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-client_data = preload(f'{args.dataset}_{args.shard}shards_{args.clients}c_{args.min}min_{args.max}max', args.dataset,
-                      LabelDistributor(args.clients, args.shard, args.min, args.max))
+dist = LabelDistributor(args.clients, args.shard, args.min, args.max)
+client_data = preload(args.dataset, dist)
 print(client_data)
 logger.info('Generating Data --Ended')
 
@@ -105,16 +105,18 @@ federated = FederatedLearning(
     accepted_accuracy_margin=0.01
 )
 
+federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
+federated.add_subscriber(Resumable(federated, dist, 'genetic_02cr'))
+
 # federated.add_subscriber(subscribers.WandbLogger(config))
 # federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
 # federated.add_subscriber(subscribers.ShowWeightDivergence(save_dir=config['save_dir'], plot_type='linear'))
-federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 # federated.add_subscriber(subscribers.FedPlot())
 # federated.add_subscriber(subscribers.FedSave(args.tag))
 # federated.add_subscriber(ShowWeightDivergence(save_dir="./pct", plot_type='linear', divergence_tag=f'genetic_sgd{args.shard}'))
-federated.add_subscriber(subscribers.ShowAvgWeightDivergence(plot_each_round=False, save_dir="./pct",
-                                                             divergence_tag='wd_' + str(args)))
+# federated.add_subscriber(subscribers.ShowAvgWeightDivergence(plot_each_round=False, save_dir="./pct",
+#                                                              divergence_tag='wd_' + str(args)))
 
 logger.info("----------------------")
 logger.info(f"start federated 1")
