@@ -1,8 +1,9 @@
 import multiprocessing
 import os
+import sys
 
+sys.path.append("../../")
 from tqdm import tqdm
-
 from src.apis import test_cases, files
 
 
@@ -43,14 +44,14 @@ def run_command(execution, force=False):
 
 
 all_tests = test_cases.build({
-    'epoch': [5],
+    'epoch': [1],
     'batch': [50],
-    'round': [500],
+    'round': [5],
     'client_ratio': [0.2],
-    'dataset': ['cifar10'],
-    'learn_rate': [0.001],
+    'dataset': ['mnist'],
+    'learn_rate': [0.1],
     'tag': ['basic', 'warmup', 'genetic', 'cluster'],
-    'shard': [2, 4, 10]
+    'shard': [2]
 })
 
 if __name__ == '__main__':

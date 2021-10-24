@@ -1,15 +1,20 @@
 import logging
 import sys
-sys.path.append('../../')
+import sys
+sys.path.append("../../")
+
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.resumable import Resumable
+from src.federated.subscribers.timer import Timer
+
 from libs.model.cv.cnn import Cifar10Model
 from src.data.data_distributor import ShardDistributor, LabelDistributor
 
 from libs.model.cv.resnet import ResNet, resnet56
-from apps.paper_experiments import federated_args
 from src.data.data_loader import preload
 from typing import Callable
 from torch import nn
-from src.apis import lambdas, files
+from src.apis import lambdas, files, federated_args
 from src.apis.extensions import TorchModel
 from libs.model.linear.lr import LogisticRegression
 from src.data import data_loader
@@ -19,7 +24,6 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
 
 args = federated_args.FederatedArgs({
     'epoch': 25,
@@ -39,8 +43,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 logger.info('Generating Data --Started')
-dist = LabelDistributor(args.clients, args.shard, args.min, args.max)
-client_data = preload(args.dataset, dist)
+client_data = preload(args.dataset, LabelDistributor(args.clients, args.shard, args.min, args.max))
 print(client_data)
 logger.info('Generating Data --Ended')
 
@@ -69,7 +72,7 @@ federated = FederatedLearning(
 )
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(Resumable(federated, dist, 'basic_02cr'))
+federated.add_subscriber(Resumable(id=str(args)))
 
 # federated.add_subscriber(subscribers.FedPlot(show_loss=False, plot_each_round=True))
 # federated.add_subscriber(subscribers.FedSave(args.tag))

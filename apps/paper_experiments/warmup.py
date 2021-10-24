@@ -2,24 +2,21 @@ import logging
 import sys
 sys.path.append('../../')
 
-from apps.paper_experiments import federated_args
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.resumable import Resumable
+from src.federated.subscribers.timer import Timer
 from libs.model.cv.cnn import Cifar10Model
-from src import tools
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
-
-
 from torch import nn
-from src.apis import lambdas, files
+from src.apis import lambdas, files, federated_args
 from src.apis.extensions import TorchModel
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components import metrics, client_selectors, aggregators, trainers
-from src.federated import subscribers
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
-from src.federated.components.trainer_manager import SeqTrainerManager, SharedTrainerProvider
-from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
+from src.federated.components.trainer_manager import SeqTrainerManager
 
 args = federated_args.FederatedArgs({
     'epoch': 25,
@@ -75,7 +72,7 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(Resumable(federated, dist, 'warmup_02cr'))
+federated.add_subscriber(Resumable(str(args)))
 
 # federated.add_subscriber(subscribers.ShowDataDistribution(10, per_round=True, save_dir='./pct'))
 # federated.add_subscriber(subscribers.FedSave(str(args)))

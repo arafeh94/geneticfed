@@ -1,22 +1,20 @@
 import copy
 import logging
 import sys
+sys.path.append("../../")
 from collections import defaultdict
 from sklearn.cluster import AgglomerativeClustering
-sys.path.append('../../')
 
-from apps.paper_experiments import federated_args
+from src.apis.utils import fed_avg
+from src.federated.subscribers.logger import FederatedLogger
+
 from libs.model.cv.cnn import Cifar10Model
 from libs.model.linear.lr import LogisticRegression
-from src import tools, manifest
-from src.apis import files, lambdas
-from src.data import data_loader
-
-from src.data.data_container import DataContainer
+from src import tools
+from src.apis import files, lambdas, federated_args
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
-from src.federated import subscribers, fedruns
-from src.federated.components import params, client_selectors
+from src.federated.components import client_selectors
 from src.federated.components.aggregators import AVGAggregator
 from src.federated.components.metrics import AccLoss
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -105,7 +103,7 @@ federated_learning = FederatedLearning(
     # accepted_accuracy_margin=0.05
 )
 
-federated_learning.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
+federated_learning.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
 
 global_model = federated_learning.start()
 w = global_model.state_dict()
@@ -147,7 +145,7 @@ for cluster, client_ids in clustered_clients.items():
         # accepted_accuracy_margin=0.02
     )
 
-    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_ROUND_FINISHED]))
+    federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED]))
     federated.init()
     clustered_federated[cluster] = federated
 
@@ -157,8 +155,7 @@ while not all(finished_tasks):
         logger.info(f'{cluster_id}')
         finished_tasks[index] = federated.one_round()
 
-runs = fedruns.FedRuns(clustered_federated)
-# runs.plot_avg()
+runs = [f.context for f in clustered_federated.values()]
 
-avg_acc, avg_loss = runs.avg()
+avg_acc, avg_loss = fed_avg(runs)
 files.accuracies.append(str(args), list(avg_acc.values()))

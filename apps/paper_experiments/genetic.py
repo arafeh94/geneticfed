@@ -1,29 +1,28 @@
 # mpiexec -n 4 python main_mpi.py
 import logging
 import sys
-sys.path.append('../../')
+sys.path.append("../../")
+
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.resumable import Resumable
+from src.federated.subscribers.timer import Timer
+
 
 from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
-from apps.paper_experiments import federated_args
 from libs.model.cv.cnn import Cifar10Model
 from src import manifest, tools
-from src.apis import files, lambdas
+from src.apis import files, lambdas, federated_args
 from src.apis.extensions import TorchModel
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
-from src.federated.subscribers import Timer, ShowWeightDivergence, Resumable, FederatedLogger
-
-
-from libs.model.cv.resnet import ResNet, resnet56
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
 from apps.genetic_selectors.algo import initializer
 from src.federated.components import metrics, client_selectors, aggregators
-from src.federated import subscribers, fedruns
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -106,7 +105,7 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(Resumable(federated, dist, 'genetic_02cr'))
+federated.add_subscriber(Resumable(str(args)))
 
 # federated.add_subscriber(subscribers.WandbLogger(config))
 # federated.add_subscriber(subscribers.ShowDataDistribution(per_round=True, label_count=62, save_dir=config['save_dir']))
