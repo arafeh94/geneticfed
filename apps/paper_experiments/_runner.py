@@ -3,25 +3,8 @@ import os
 import sys
 
 sys.path.append("../../")
-from tqdm import tqdm
 from src.apis import test_cases, files
 
-
-#
-# sgd_tests = test_cases.build({
-#     'epoch': [1],
-#     'batch': [9999],
-#     'round': [50, 100],
-#     'client_ratio': [0.1, 0.2, 0.5, 1],
-#     'dataset': ['mnist'],
-#     'tag': ['basic', 'cluster', 'warmup', 'genetic'],
-#     'shard': [2, 4, 10]
-# })
-#
-# for test in tqdm(sgd_tests):
-#     print(test)
-#     os.system(f"py {test['tag']}.py  -e {test['epoch']} -b {test['batch']} -r {test['round']} "
-#               f"-s {test['shard']} -d {test['dataset']} -cr {test['client_ratio']} -lr 0.1 -t {test['tag']}")
 
 def build_tag(args):
     return f'{args["tag"]}_e{args["epoch"]}_b{args["batch"]}_r{args["round"]}_s{args["shard"]}' \
@@ -43,19 +26,53 @@ def run_command(execution, force=False):
         print("Experiments already executed, skip.")
 
 
-all_tests = test_cases.build({
-    'epoch': [1],
-    'batch': [50],
-    'round': [5],
-    'client_ratio': [0.2],
-    'dataset': ['mnist'],
-    'learn_rate': [0.1],
-    'tag': ['basic', 'warmup', 'genetic', 'cluster'],
-    'shard': [2]
-})
+key_tests = {
+    'cifar': test_cases.build({
+        'epoch': [25],
+        'batch': [50],
+        'round': [500],
+        'client_ratio': [0.1],
+        'dataset': ['cifar10'],
+        'learn_rate': [0.001],
+        'tag': ['cluster'],
+        'shard': [2, 4, 10]
+    }),
+    'mnist': test_cases.build({
+        'epoch': [25],
+        'batch': [50],
+        'round': [500],
+        'client_ratio': [0.1],
+        'dataset': ['mnist'],
+        'learn_rate': [0.1],
+        'tag': ['cluster'],
+        'shard': [2, 4, 10]
+    }),
+    'sgd_mnist': test_cases.build({
+        'epoch': [1],
+        'batch': [9999],
+        'round': [500],
+        'client_ratio': [0.1],
+        'dataset': ['mnist'],
+        'learn_rate': [0.1],
+        'tag': ['cluster'],
+        'shard': [2, 4, 10]
+    }),
+    'sgd_cifar': test_cases.build({
+        'epoch': [1],
+        'batch': [9999],
+        'round': [500],
+        'client_ratio': [0.1],
+        'dataset': ['cifar10'],
+        'learn_rate': [0.001],
+        'tag': ['cluster'],
+        'shard': [2, 4, 10]
+    }),
+}
 
 if __name__ == '__main__':
     # pool = multiprocessing.Pool(2)
     # pool.map(run_command, all_tests)
-    for t in all_tests:
-        run_command(t)
+    for kt in key_tests:
+        print(f"starting {kt} tests: {len(key_tests[kt])}")
+        for t in key_tests[kt]:
+            run_command(t)

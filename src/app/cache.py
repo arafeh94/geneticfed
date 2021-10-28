@@ -2,7 +2,7 @@ from src.apis.extensions import Serializable
 
 
 class Cache(Serializable):
-    def __init__(self, path):
+    def __init__(self, path=None):
         super().__init__(path)
         self.cached = {}
 
@@ -26,3 +26,4 @@ class Cache(Serializable):
         self.cached[key] = obj
         self.save()
         return True
+

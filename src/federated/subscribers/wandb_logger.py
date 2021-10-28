@@ -1,5 +1,8 @@
 import atexit
 
+from src.app import session
+from src.app.federated_app import FederatedApp
+from src.app.session import Session
 from src.federated.events import FederatedEventPlug
 from src.federated.federated import FederatedLearning
 from src.manifest import WandbAuth
@@ -28,3 +31,5 @@ class WandbLogger(FederatedEventPlug):
 
     def on_federated_ended(self, params):
         self.wandb.finish()
+
+

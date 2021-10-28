@@ -1,6 +1,9 @@
 import copy
 import logging
 import sys
+
+from src.apis.extensions import Dict
+
 sys.path.append("../../")
 from collections import defaultdict
 from sklearn.cluster import AgglomerativeClustering
@@ -77,16 +80,17 @@ config = {
 
 
 def partition(per):
-    part_data = {}
+    part_data = Dict({})
     for client_id, data in client_data.items():
-        part, rest = data.split(per)
-        part_data[client_id] = part
-        client_data[client_id] = rest
+        part, rest = data.shuffle(47).split(per)
+        part_data[client_id] = part.as_tensor()
+        client_data[client_id] = rest.as_tensor()
     return part_data
 
 
 cluster_data = partition(config['clustering_data_ratio'])
 update_data = partition(config['update_data_ration'])
+test_data = Dict(partition(0.2)).reduce(lambdas.dict2dc).as_tensor()
 
 federated_learning = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
@@ -100,7 +104,6 @@ federated_learning = FederatedLearning(
     aggregator=AVGAggregator(),
     initial_model=config['model'],
     trainers_data_dict=cluster_data,
-    # accepted_accuracy_margin=0.05
 )
 
 federated_learning.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED, Events.ET_FED_END]))
@@ -127,9 +130,6 @@ logger.info(cluster_dist)
 clustered_federated = {}
 for cluster, client_ids in clustered_clients.items():
     logger.info(f'cluster:{cluster}-clients:{client_ids}')
-    if len(client_ids) < 1:
-        logger.info("can't run federated learning with less than 1 clients")
-        continue
     federated = FederatedLearning(
         trainer_manager=SeqTrainerManager(),
         trainer_config=TrainerParams(trainer_class=TorchTrainer, batch_size=args.batch, epochs=args.epoch,
@@ -138,11 +138,11 @@ for cluster, client_ids in clustered_clients.items():
         client_selector=client_selectors.Random(args.clients_ratio),
         desired_accuracy=0.99,
         train_ratio=0.8,
+        test_data=test_data,
         metrics=AccLoss(config['batch_size'], 'cel'),
         aggregator=AVGAggregator(),
         initial_model=lambda: global_model,
         trainers_data_dict=tools.dict_select(client_ids, client_data),
-        # accepted_accuracy_margin=0.02
     )
 
     federated.add_subscriber(FederatedLogger([Events.ET_ROUND_FINISHED]))

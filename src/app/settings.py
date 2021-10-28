@@ -43,13 +43,20 @@ class Settings:
     def _create(self, obj) -> typing.Any:
         if isinstance(obj, dict):
             if 'class_ref' in obj:
-                return Clazz(obj['class_ref']).refer()
+                class_ref = obj.pop('class_ref')
+                return Clazz(class_ref).refer()
             if 'class' in obj:
                 class_name = obj.pop('class')
                 obj_params = {}
                 for key, item in obj.items():
                     obj_params[key] = self._create(item)
                 return Clazz(class_name).create(obj_params)
+        if isinstance(obj, list):
+            initializations = []
+            for o in obj:
+                initialized = self._create(obj)
+                initializations.append(initialized)
+            return initializations
         return obj
 
     @staticmethod

@@ -41,8 +41,7 @@ class Resumable(FederatedEventPlug):
     def _save(self, context):
         self.log('saving checkpoint...')
         cps = checkpoints_utils.read(self.cp_file_path)
-        context_copy = copy.deepcopy(context)
-        del context_copy.federated
+        context_copy = self.context_copy(context)
         cps[self.id] = context_copy
         checkpoints_utils.write(cps)
 
@@ -58,3 +57,12 @@ class Resumable(FederatedEventPlug):
 
     def log(self, msg):
         self.logger.log(self.verbose, msg)
+
+    def context_copy(self, context):
+        cp = FederatedLearning.Context(context.federated)
+        cp.history = copy.deepcopy(context.history)
+        cp.model = copy.deepcopy(context.model)
+        cp.round_id = copy.deepcopy(context.round_id)
+        cp.timestamp = copy.deepcopy(context.timestamp)
+        del cp.federated
+        return cp
