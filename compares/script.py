@@ -26,7 +26,7 @@ print(wds.keys())
 low = min([min(wds[tag]) for tag in tags])
 high = max([max(wds[tag]) for tag in tags])
 
-colors = ['b', '#117733','#DDCC77' ]
+colors = ['b', '#117733', '#DDCC77']
 
 for index, tag in enumerate(tags):
     plt.plot(utils.smooth(norm(wds[tag], low, high))[:30], '--', color=colors[index], label='ACC')
