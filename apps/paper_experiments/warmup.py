@@ -2,6 +2,7 @@ import logging
 import sys
 
 from src.federated.subscribers.fed_plots import EMDWeightDivergence
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
 
 sys.path.append('../../')
 
@@ -12,7 +13,7 @@ from libs.model.cv.cnn import Cifar10Model
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 from torch import nn
-from src.apis import lambdas, files, federated_args
+from src.apis import lambdas, files, federated_args, utils
 from src.apis.extensions import TorchModel
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components import metrics, client_selectors, aggregators, trainers
@@ -75,7 +76,8 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(EMDWeightDivergence())
+federated.add_subscriber(EMDWeightDivergence(show_plot=False))
+federated.add_subscriber(SQLiteLogger(id=utils.hash_string(str(args)), tag=str(args)))
 
 logger.info("----------------------")
 logger.info("start federated 1")

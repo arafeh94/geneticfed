@@ -3,6 +3,7 @@ import logging
 import sys
 
 from src.apis.extensions import Dict
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
 
 sys.path.append("../../")
 from collections import defaultdict
@@ -14,7 +15,7 @@ from src.federated.subscribers.logger import FederatedLogger
 from libs.model.cv.cnn import Cifar10Model
 from libs.model.linear.lr import LogisticRegression
 from src import tools
-from src.apis import files, lambdas, federated_args
+from src.apis import files, lambdas, federated_args, utils
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
 from src.federated.components import client_selectors
@@ -149,13 +150,19 @@ for cluster, client_ids in clustered_clients.items():
     federated.init()
     clustered_federated[cluster] = federated
 
+sqlogger = SQLiteLogger(utils.hash_string(str(args)), tag=str(args))
+sqlogger.init()
 finished_tasks = [False] * len(clustered_federated)
+round_id = 0
 while not all(finished_tasks):
     for index, (cluster_id, federated) in enumerate(clustered_federated.items()):
         logger.info(f'{cluster_id}')
         finished_tasks[index] = federated.one_round()
+    one_round_context = [f.context for f in clustered_federated.values()]
+    avg_acc, avg_loss = fed_avg(one_round_context)
+    sqlogger.log(round_id, acc=list(avg_acc.values())[-1], loss=list(avg_loss.values())[-1])
+    round_id += 1
 
 runs = [f.context for f in clustered_federated.values()]
-
 avg_acc, avg_loss = fed_avg(runs)
 files.accuracies.append(str(args), list(avg_acc.values()))

@@ -3,6 +3,7 @@ import logging
 import sys
 
 from src.federated.subscribers.fed_plots import EMDWeightDivergence
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
 
 sys.path.append("../../")
 
@@ -10,14 +11,13 @@ from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.resumable import Resumable
 from src.federated.subscribers.timer import Timer
 
-
 from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
 from libs.model.cv.cnn import Cifar10Model
 from src import manifest, tools
-from src.apis import files, lambdas, federated_args
+from src.apis import files, lambdas, federated_args, utils
 from src.apis.extensions import TorchModel
 from src.data.data_distributor import LabelDistributor
 from src.data.data_loader import preload
@@ -108,8 +108,8 @@ federated = FederatedLearning(
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(EMDWeightDivergence())
-
+federated.add_subscriber(EMDWeightDivergence(show_plot=False))
+federated.add_subscriber(SQLiteLogger(id=utils.hash_string(str(args)), tag=str(args)))
 
 logger.info("----------------------")
 logger.info(f"start federated 1")
@@ -117,4 +117,3 @@ logger.info("----------------------")
 federated.start()
 files.accuracies.save_accuracy(federated, str(args))
 files.divergences.save_divergence(federated, str(args))
-
