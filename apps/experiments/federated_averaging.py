@@ -3,9 +3,8 @@ import sys
 
 sys.path.append('../../')
 
-
 from torch import nn
-from src.federated.subscribers.fed_plots import EMDWeightDivergence
+from src.federated.subscribers.fed_plots import EMDWeightDivergence, RoundAccuracy
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from src.federated.subscribers.timer import Timer
@@ -38,17 +37,16 @@ federated = FederatedLearning(
     client_selector=client_selectors.Random(0.2),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=3,
+    num_rounds=200,
     desired_accuracy=0.99,
     accepted_accuracy_margin=0.01,
 )
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(EMDWeightDivergence(show_plot=False))
-federated.add_subscriber(SQLiteLogger('avg_2'))
-# federated.add_subscriber(Resumable(IODict('./saved_models/test_avg'), save_ratio=1))
-# federated.add_subscriber(fed_plots.RoundAccuracy(plot_ratio=0))
+federated.add_subscriber(EMDWeightDivergence(save_dir='./plt'))
+federated.add_subscriber(RoundAccuracy(save_dir='./plt'))
+federated.add_subscriber(SQLiteLogger('avg', db_path='./perf.db'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

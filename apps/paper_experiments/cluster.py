@@ -1,6 +1,7 @@
 import copy
 import logging
 import sys
+from datetime import datetime
 
 from src.apis.extensions import Dict
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
@@ -28,17 +29,18 @@ from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 
 args = federated_args.FederatedArgs({
-    'epoch': 10,
+    'epoch': 25,
     'batch': 50,
-    'round': 500,
+    'round': 50,
     'shard': 2,
-    'dataset': 'cifar10',
+    'dataset': 'mnist',
     'clients_ratio': 0.1,
-    'learn_rate': 0.001,
+    'learn_rate': 0.1,
     'tag': 'cluster',
     'min': 600,
     'max': 600,
     'clients': 100,
+    'timestamp': datetime.now()
 })
 
 logging.basicConfig(level=logging.INFO)
@@ -72,7 +74,7 @@ config = {
     'nb_clusters': 10,
     'model': lambda: initial_model,
 
-    'clustering_num_rounds': 2,
+    'clustering_num_rounds': 5,
     'linkage': 'complete',
     'clustering_measuring_algo': 'cosine',
     'update_data_ration': 0.05,
@@ -95,7 +97,7 @@ test_data = Dict(partition(0.2)).reduce(lambdas.dict2dc).as_tensor()
 
 federated_learning = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
-    trainer_config=TrainerParams(trainer_class=TorchChunkTrainer, batch_size=config['batch_size'], epochs=1,
+    trainer_config=TrainerParams(trainer_class=TorchChunkTrainer, batch_size=config['batch_size'], epochs=5,
                                  criterion='cel', optimizer='sgd', lr=args.learn_rate),
     num_rounds=config['clustering_num_rounds'],
     client_selector=client_selectors.All(),
@@ -114,7 +116,7 @@ w = global_model.state_dict()
 clients_diff_weights = {}
 for client_id, data in update_data.items():
     model_copy = copy.deepcopy(global_model)
-    tools.train(model_copy, data.batch(config['batch_size']), epochs=1, lr=args.learn_rate)
+    tools.train(model_copy, data.batch(config['batch_size']), epochs=5, lr=args.learn_rate)
     wc = model_copy.state_dict()
     delta = tools.flatten_weights(w) - tools.flatten_weights(wc)
     clients_diff_weights[client_id] = delta
@@ -139,7 +141,7 @@ for cluster, client_ids in clustered_clients.items():
         client_selector=client_selectors.Random(args.clients_ratio),
         desired_accuracy=0.99,
         train_ratio=0.8,
-        test_data=test_data,
+        # test_data=test_data,
         metrics=AccLoss(config['batch_size'], 'cel'),
         aggregator=AVGAggregator(),
         initial_model=lambda: global_model,

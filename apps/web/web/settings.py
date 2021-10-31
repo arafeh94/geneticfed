@@ -52,7 +52,7 @@ ROOT_URLCONF = 'web.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'checkpoints/html')],
+        'DIRS': [os.path.join(BASE_DIR, 'exp/html')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
