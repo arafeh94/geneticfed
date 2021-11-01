@@ -34,19 +34,20 @@ federated = FederatedLearning(
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss(), device='cpu'),
-    client_selector=client_selectors.Random(0.2),
+    client_selector=client_selectors.Random(0),
     trainers_data_dict=client_data,
     initial_model=lambda: LogisticRegression(28 * 28, 10),
     num_rounds=200,
     desired_accuracy=0.99,
     accepted_accuracy_margin=0.01,
+    zero_client_exception=False
 )
 
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(EMDWeightDivergence(save_dir='./plt'))
-federated.add_subscriber(RoundAccuracy(save_dir='./plt'))
-federated.add_subscriber(SQLiteLogger('avg', db_path='./perf.db'))
+# federated.add_subscriber(RoundAccuracy(save_dir='./plt'))
+# federated.add_subscriber(SQLiteLogger('avg', db_path='./perf.db'))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")
