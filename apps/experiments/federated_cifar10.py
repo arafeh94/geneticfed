@@ -1,11 +1,12 @@
 import logging
 import sys
 
-from src.federated.subscribers.fed_plots import EMDWeightDivergence
-from src.federated.subscribers.sqlite_logger import SQLiteLogger
-
 sys.path.append('../../')
 
+from src.apis.rw import IODict
+from src.federated.subscribers.fed_plots import EMDWeightDivergence
+from src.federated.subscribers.resumable import Resumable
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from libs.model.cv.resnet import resnet56
 from torch import nn
 import libs.model.cv.cnn
@@ -57,6 +58,7 @@ federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(EMDWeightDivergence(show_plot=False))
 federated.add_subscriber(SQLiteLogger(id='cifar', db_path='perf.db', tag='cifar10'))
+federated.add_subscriber(Resumable(IODict('./cache.cs')))
 logger.info("----------------------")
 logger.info("start federated 1")
 logger.info("----------------------")

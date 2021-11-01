@@ -1,3 +1,4 @@
+import math
 import sqlite3
 from collections import defaultdict
 from typing import Callable
@@ -48,24 +49,25 @@ class Graphs:
             values = self._db.get(session_id, field)
             values = transform(values) if transform else values
             print(values)
-            session_values[f'{session_id}_{field}'] = values
+            session_values[f'{session_id}_{field}_{str(transform)}'] = values
         if animated:
+            pause = 0.05
             session_end = [False] * len(sessions)
             round_id = 0
             session_plot_values = defaultdict(list)
             while False in session_end:
                 for session_id, field, config, transform in sessions:
                     try:
-                        session_plot_values[f'{session_id}_{field}'].append(
-                            session_values[f'{session_id}_{field}'][round_id])
-                        plt.plot(session_plot_values[f'{session_id}_{field}'], **config)
+                        session_plot_values[f'{session_id}_{field}_{str(transform)}'].append(
+                            session_values[f'{session_id}_{field}_{str(transform)}'][round_id])
+                        plt.plot(session_plot_values[f'{session_id}_{field}_{str(transform)}'], **config)
                     except IndexError as e:
                         session_end[session_end.index(False)] = True
-                plt.pause(0.05)
+                plt.pause(pause)
                 round_id += 1
         else:
             for session_id, field, config, transform in sessions:
-                plt.plot(session_values[f'{session_id}_{field}'], **config)
+                plt.plot(session_values[f'{session_id}_{field}_{str(transform)}'], **config)
         plt.xlabel('Rounds')
         plt.ylabel('Accuracy')
         plt.title(title)
