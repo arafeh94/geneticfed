@@ -19,5 +19,5 @@ class Random(ClientSelector):
             select_size = int(self.num * len(trainer_ids))
         select_size = 1 if select_size < 1 else select_size
         selected_trainers = random.sample(trainer_ids, select_size)
-        return []
+        return selected_trainers
 

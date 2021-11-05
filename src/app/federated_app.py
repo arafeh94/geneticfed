@@ -26,8 +26,9 @@ class FederatedApp:
         self.log_level = settings.get('log_level', absent_ok=True) or logging.INFO
 
     def init_federated(self, session):
-        distributor = self.settings.get('distributor', absent_ok=False)
-        dataset_name = self.settings.get('dataset', absent_ok=False)
+        distributor = self.settings.get('data.distributor', absent_ok=False)
+        dataset_name = self.settings.get('data.dataset', absent_ok=False)
+        transformer = self.settings.get('data.transformer', absent_ok=False)
         model = self.settings.get('model', absent_ok=False)
         trainer_params = TrainerParams(
             trainer_class=self.settings.get('trainer_class') or trainers.TorchTrainer,
@@ -41,7 +42,7 @@ class FederatedApp:
         metric = metrics.AccLoss(batch_size=self.settings.get('batch_size', absent_ok=False),
                                  criterion=nn.CrossEntropyLoss(), device=self.settings.get('device') or None)
         selector = client_selectors.Random(self.settings.get('client_ratio', absent_ok=False))
-        distributed_data = preload(dataset_name, distributor)
+        distributed_data = preload(dataset_name, distributor, transformer=transformer)
         federated = FederatedLearning(
             trainer_manager=SeqTrainerManager(),
             trainer_config=trainer_params,
@@ -101,5 +102,5 @@ class FederatedApp:
             FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]),
             Timer([Timer.FEDERATED, Timer.ROUND]),
             Resumable(io=session.cache),
-            SQLiteLogger(session.session_id(), db_path='./log.db', tag=str(session.settings.get_config()))
+            SQLiteLogger(session.session_id(), db_path='./cache/perf.db', tag=str(session.settings.get_config()))
         ]
