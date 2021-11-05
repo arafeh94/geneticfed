@@ -1,0 +1,39 @@
+{
+  "cache": {
+    "class": "src.app.cache.Cache"
+  },
+  "data": {
+    "dataset": "mnist",
+    "distributor": {
+      "class": "src.data.data_distributor.UniqueDistributor",
+      "num_clients": 10,
+      "min_size": 600,
+      "max_size": 600
+    }
+  },
+  "model": {
+    "class": "libs.model.linear.lr.LogisticRegression",
+    "input_dim": 784,
+    "output_dim": 10
+  },
+  "trainer_class": {
+    "refer": "src.federated.components.trainers.CPUTrainer"
+  },
+  "aggregator": {
+    "class": "src.federated.components.aggregators.AVGAggregator"
+  },
+  "epochs": [
+    30,
+    40
+  ],
+  "lr": [
+    0.1,
+    0.0001
+  ],
+  "rounds": 2,
+  "batch_size": 50,
+  "client_ratio": 0.4,
+  "device": "cpu",
+  "optimizer": "sgd",
+  "criterion": "cel"
+}
