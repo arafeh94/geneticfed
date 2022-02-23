@@ -2,8 +2,6 @@ import hashlib
 import typing
 from functools import reduce
 
-from mega import Mega
-
 
 def smooth(vals, sigma=2):
     from scipy.ndimage import gaussian_filter1d
@@ -35,6 +33,3 @@ def fed_avg(runs: typing.List['FederatedLearning.Context']):
         avg_acc[round_id] = np.average(avg_acc[round_id])
         avg_loss[round_id] = np.average(avg_loss[round_id])
     return avg_acc, avg_loss
-
-
-
