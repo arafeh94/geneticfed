@@ -1,10 +1,13 @@
 import logging
 import sys
 
+from src.apis import lambdas
+from src.apis.resources import RamTracker, CPUTracker
+
 sys.path.append('../../')
 
 from torch import nn
-from src.federated.subscribers.fed_plots import EMDWeightDivergence, RoundAccuracy
+from src.federated.subscribers.fed_plots import EMDWeightDivergence, RoundAccuracy, RoundLoss
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from src.federated.subscribers.timer import Timer
@@ -20,35 +23,36 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-logger.info('Generating Data --Started')
-dist = LabelDistributor(100, 10, 600, 600)
-params = ['client_number']
-client_data = preload('mnist', dist)
-logger.info('Generating Data --Ended')
-
-trainer_params = TrainerParams(trainer_class=trainers.CPUTrainer, batch_size=50, epochs=1, optimizer='sgd',
+# (1)
+# client_data = preload('mnist', LabelDistributor(num_clients=100, label_per_client=5, min_size=600, max_size=600))
+client_data = preload('fall_by_client').map(lambdas.dc_split(0.1, 1))
+# (2)
+trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=25, optimizer='sgd',
                                criterion='cel', lr=0.1)
-
+# (3)
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
-    metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss(), device='cpu'),
-    client_selector=client_selectors.Random(0),
+    metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
+    client_selector=client_selectors.Random(0.4),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(28 * 28, 10),
-    num_rounds=200,
-    desired_accuracy=0.99,
-    accepted_accuracy_margin=0.01,
-    zero_client_exception=False
+    initial_model=lambda: LogisticRegression(11, 3),
+    num_rounds=50,
+    desired_accuracy=0.99
 )
 
-federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-federated.add_subscriber(EMDWeightDivergence(save_dir='./plt'))
-# federated.add_subscriber(RoundAccuracy(save_dir='./plt'))
-# federated.add_subscriber(SQLiteLogger('avg', db_path='./perf.db'))
+# (4)
+federated.add_subscriber(FederatedLogger())
+federated.add_subscriber(Timer())
+federated.add_subscriber(RoundAccuracy(plot_ratio=1))
+federated.add_subscriber(RoundLoss(plot_ratio=1))
+
+# (5)
+# RamTracker(delay=1).attach(federated)
+# CPUTracker(delay=1).attach(federated)
+
 logger.info("----------------------")
-logger.info("start federated 1")
+logger.info("start federated learning")
 logger.info("----------------------")
 federated.start()

@@ -18,3 +18,5 @@ validators
 wget
 zipfile-deflate64
 tqdm
+schedule
+mega.py

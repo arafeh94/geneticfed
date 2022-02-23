@@ -1,23 +1,26 @@
 # mpiexec -n 4 python main_mpi.py
 import logging
+import os.path
 import sys
 from os.path import dirname
+from pathlib import Path
 
 from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
+from apps.genetic_selectors.algo import initializer
 from src.data import data_loader
-from src.federated.subscribers import Timer
+from src.federated.subscribers.logger import FederatedLogger
+from src.federated.subscribers.sqlite_logger import SQLiteLogger
+from src.federated.subscribers.timer import Timer
 
 sys.path.append(dirname(__file__) + '../')
 
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
-from apps.genetic_selectors.src import initializer
 from src.federated.components import metrics, client_selectors, aggregators
-from src.federated import subscribers, fedruns
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -25,15 +28,14 @@ from src.federated.components.trainer_manager import SeqTrainerManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
-batch_size = 30
-epochs = 20
-clients_per_round = 3
-num_rounds = 5
+batch_size = 50
+epochs = 5
+clients_per_round = 10
+num_rounds = 100
 model = lambda: LogisticRegression(28 * 28, 10)
-data_file = '../../datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl'
-
+db_name = 'res3.db'
 logger.info('Generating Data --Started')
-client_data = data_loader.mnist_10shards_100c_400min_400max()
+client_data = data_loader.load_tag('mnist_pipe_unbalanced')
 logger.info('Generating Data --Ended')
 
 configs = {
@@ -47,42 +49,41 @@ configs = {
         'ga_max_iter': 10,
         'ga_r_cross': 0.05,
         'ga_r_mut': 0.1,
-        'ga_c_size': 30,
+        'ga_c_size': 10,
         'ga_p_size': 200,
-        'nb_clusters': 30,
+        'nb_clusters': 5,
         'ga_min_fitness': 0.45,
     },
-    'normal': {
-        'batch_size': batch_size,
-        'epochs': epochs,
-        'clients_per_round': clients_per_round,
-        'num_rounds': num_rounds,
-        'desired_accuracy': 0.99,
-        'model': model,
-    },
-    # 'clustered': {
+    # 'normal': {
     #     'batch_size': batch_size,
     #     'epochs': epochs,
     #     'clients_per_round': clients_per_round,
     #     'num_rounds': num_rounds,
     #     'desired_accuracy': 0.99,
-    #     'test_on': FederatedLearning.TEST_ON_ALL,
     #     'model': model,
-    #     'c_size': 10,
-    #     'nb_clusters': 10,
     # },
-    'rl': {
+    'clustered': {
         'batch_size': batch_size,
         'epochs': epochs,
         'clients_per_round': clients_per_round,
         'num_rounds': num_rounds,
         'desired_accuracy': 0.99,
         'model': model,
-    }
+        'c_size': 10,
+        'nb_clusters': 5,
+    },
+    # 'rl': {
+    #     'batch_size': batch_size,
+    #     'epochs': epochs,
+    #     'clients_per_round': clients_per_round,
+    #     'num_rounds': num_rounds,
+    #     'desired_accuracy': 0.99,
+    #     'model': model,
+    # }
 
 }
 
-fd = fedruns.FedRuns({})
+Path(db_name).unlink(missing_ok=True)
 for name, config in configs.items():
 
     initial_model = config['model']
@@ -90,7 +91,7 @@ for name, config in configs.items():
         initial_model = initializer.ga_module_creator(client_data, initial_model, max_iter=config['ga_max_iter'],
                                                       r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
                                                       c_size=config['ga_c_size'], p_size=config['ga_p_size'],
-                                                      clusters=config['nb_clusters'],
+                                                      clusters=config['nb_clusters'], epoch=50,
                                                       desired_fitness=config['ga_min_fitness'])
     elif name == 'clustered':
         initial_model = initializer.cluster_module_creator(client_data, initial_model, config['nb_clusters'],
@@ -114,20 +115,13 @@ for name, config in configs.items():
         initial_model=initial_model,
         num_rounds=config['num_rounds'],
         desired_accuracy=config['desired_accuracy'],
-        test_on=FederatedLearning.TEST_ON_ALL
+        accepted_accuracy_margin=0.05
     )
 
-    federated.add_subscriber(subscribers.FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
+    federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
     federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-    # federated.plug(plugins.FedPlot())
-    # federated.plug(plugins.FedSave())
-    # federated.plug(plugins.WandbLogger(config={'method': 'genetic', 'max_rounds': 10}))
-    # federated.plug(plugins.MPIStopPlug())
+    federated.add_subscriber(SQLiteLogger(f'genetic_cluster_test_{name}', db_name))
     logger.info("----------------------")
     logger.info(f"start federated {name}")
     logger.info("----------------------")
     federated.start()
-    fd.append(name, federated)
-
-fd.compare_all()
-fd.plot()

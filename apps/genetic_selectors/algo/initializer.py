@@ -24,7 +24,7 @@ def ga_module_creator(clients_data, init_model, max_iter=20, r_cross=0.1, r_mut=
 
 def cluster_module_creator(clients_data, init_model, clusters=10, c_size=1):
     context = Context(clients_data, init_model)
-    context.train(ratio=0.1)
+    context.train(data_ratio=0.1)
     clustered = ClusterSelector(context.cluster(clusters))
     selected_idx = []
     while len(selected_idx) < c_size:

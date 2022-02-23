@@ -70,7 +70,7 @@ config = {
     'nb_clusters': 10,
     'model': lambda: c_model,
 
-    'ga_max_iter': 5,
+    'ga_max_iter': 20,
     'ga_r_cross': 0.05,
     'ga_r_mut': 0.1,
     'ga_c_size': 10,
@@ -86,7 +86,7 @@ initial_model = initializer.ga_module_creator(
     r_cross=config['ga_r_cross'], r_mut=config['ga_r_mut'],
     c_size=config['ga_c_size'], p_size=config['ga_p_size'],
     clusters=config['nb_clusters'],
-    desired_fitness=config['ga_min_fitness'], epoch=config['ga_epochs'], batch=50,
+    desired_fitness=config['ga_min_fitness'], epoch=500, batch=50,
     saved_models=f'./saved_models_{args.shard}_{config["ga_epochs"]}_{args.dataset}_{args.learn_rate}',
     lr=args.learn_rate
 )

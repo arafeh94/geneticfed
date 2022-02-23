@@ -35,6 +35,7 @@ cifar-10-batches-py
 *.png
 *.zip
 *.json
+*.pkl
 
 #big pkl files
 *_big*.pkl
@@ -42,27 +43,10 @@ cifar-10-batches-py
 /apps/experiments/logs
 /apps/experiments/logs/*
 /apps/experiments/wandb
-/datasets/pickles/mnist_10shards_100c_400mn_400mx.pkl
-/datasets/pickles/mnist_2shards_70c_600mn_600mx.pkl
-/datasets/pickles/femnist.pkl
-/datasets/pickles/mnist.pkl
-/datasets/pickles/cars.pkl
 
 #raw datasets
-/datasets/raw/femnist/fed_emnist_train.h5
-/datasets/raw/femnist/fed_emnist_test.h5
-/datasets/raw/kdd/KDDTest+.arff
-/datasets/raw/kdd/KDDTrain+.arff
-/datasets/raw/shakespeare/shakespeare_all_data.json
-/datasets/raw/cars/a1/
-/datasets/raw/cars/a2/
-/datasets/raw/cars/a3/
-/datasets/raw/cars/a4/
-/datasets/raw/cars/a5/
-/datasets/raw/cars/a6/
-/datasets/raw/cars/a7/
-/datasets/raw/cars/a8/
-/datasets/
-/tests/
-/tests/
+/datasets/raw/*
+/datasets/raw/*/*
+/datasets/raw/*/*/*
+/tests/*
 /checkpoints/

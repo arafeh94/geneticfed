@@ -13,7 +13,7 @@ def rl_module_creator(clients_data, initial_model) -> nn.Module:
     w_first = tools.flatten_weights(initial_model.state_dict())
 
     context = Context(clients_data, lambda: initial_model)
-    context.train(ratio=0.1)
+    context.train(data_ratio=0.1, epochs=5)
     weights = {}
     for trainer_id, stats in context.model_stats.items():
         weights[trainer_id] = tools.flatten_weights(stats)

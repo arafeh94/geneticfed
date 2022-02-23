@@ -1,6 +1,7 @@
 import copy
 import statistics
 import threading
+import time
 
 import numpy
 import numpy as np
@@ -11,6 +12,7 @@ from sklearn.cluster import KMeans
 import logging
 from src import tools
 from src.apis.extensions import Serializable
+from src.apis.rw import IODict
 from src.data.data_container import DataContainer
 
 
@@ -25,8 +27,9 @@ class Context(Serializable):
         self.init_model = self.create_model()
         self.logging = logging.getLogger('context')
         self.load()
+        self.times = []
 
-    def train(self, ratio=0, epochs=100, batch=50, lr=0.1):
+    def train(self, data_ratio=0, epochs=100, batch=50, lr=0.1):
         if len(self.models) > 0:
             self.logging.info("Models Loaded")
             return
@@ -34,10 +37,10 @@ class Context(Serializable):
         self.logging.info("Building Models --Started")
 
         for client_idx, data in self.clients_data.items():
-            if ratio > 0:
+            if data_ratio > 0:
                 shuffled = data.shuffle().as_tensor()
-                new_x = shuffled.x[0:int(len(data.x) * ratio)]
-                new_y = shuffled.y[0:int(len(data.y) * ratio)]
+                new_x = shuffled.x[0:int(len(data.x) * data_ratio)]
+                new_y = shuffled.y[0:int(len(data.y) * data_ratio)]
                 data = DataContainer(new_x, new_y)
             self.logging.info(f"Building Models --ClientID{client_idx}")
             model = copy.deepcopy(self.init_model)
@@ -63,7 +66,7 @@ class Context(Serializable):
             weights.append(self.compress(tools.flatten_weights(stats))
                            if compress else tools.flatten_weights(stats))
         kmeans = KMeans(n_clusters=cluster_size).fit(weights)
-        print(kmeans.labels_.reshape(-1, cluster_size))
+        print(kmeans.labels_)
         for i, label in enumerate(kmeans.labels_):
             clustered[client_ids[i]] = label
         self.logging.info("Clustering Models --Finished")
@@ -115,6 +118,7 @@ class Context(Serializable):
         return acc_loss
 
     def ecl(self, client_idx):
+        t1 = time.time()
         aggregated = tools.aggregate(tools.dict_select(client_idx, self.model_stats),
                                      tools.dict_select(client_idx, self.sample_dict))
         influences = []
@@ -123,6 +127,10 @@ class Context(Serializable):
             influences.append(influence)
         fitness = statistics.variance(tools.normalize(influences))
         fitness = fitness * 10 ** 5
+        t1 = time.time() - t1
+        self.times.append(t1)
+        print(t1)
+        IODict('./times').write('times', self.times)
         return fitness
 
     def fitness(self, client_idx):

@@ -1,5 +1,8 @@
 import hashlib
 import typing
+from functools import reduce
+
+from mega import Mega
 
 
 def smooth(vals, sigma=2):
@@ -10,6 +13,11 @@ def smooth(vals, sigma=2):
 def hash_string(string: str):
     full_hash = str.encode(string)
     return hashlib.md5(full_hash).hexdigest()
+
+
+def factors(n):
+    return set(reduce(list.__add__,
+                      ([i, n // i] for i in range(1, int(n ** 0.5) + 1) if n % i == 0)))
 
 
 # noinspection PyUnresolvedReferences
@@ -27,3 +35,6 @@ def fed_avg(runs: typing.List['FederatedLearning.Context']):
         avg_acc[round_id] = np.average(avg_acc[round_id])
         avg_loss[round_id] = np.average(avg_loss[round_id])
     return avg_acc, avg_loss
+
+
+
