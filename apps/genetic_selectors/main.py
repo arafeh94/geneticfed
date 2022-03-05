@@ -9,6 +9,7 @@ from torch import nn
 
 from apps.flsim.src.client_selector import RLSelector
 from apps.flsim.src.initializer import rl_module_creator
+from apps.genetic_selectors import distributor
 from apps.genetic_selectors.algo import initializer
 from src.data import data_loader
 from src.federated.subscribers.logger import FederatedLogger
@@ -18,7 +19,7 @@ from src.federated.subscribers.timer import Timer
 sys.path.append(dirname(__file__) + '../')
 
 from libs.model.linear.lr import LogisticRegression
-from src.federated.components.trainers import TorchTrainer
+from src.federated.components.trainers import TorchTrainer, CPUTrainer
 from src.federated.protocols import TrainerParams
 from src.federated.components import metrics, client_selectors, aggregators
 from src.federated.federated import Events
@@ -29,13 +30,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('main')
 
 batch_size = 50
-epochs = 5
+epochs = 1
 clients_per_round = 10
 num_rounds = 100
 model = lambda: LogisticRegression(28 * 28, 10)
-db_name = 'res3.db'
+db_name = 'res7.db'
 logger.info('Generating Data --Started')
-client_data = data_loader.load_tag('mnist_pipe_unbalanced')
+client_data = distributor.get_distributed_data()
 logger.info('Generating Data --Ended')
 
 configs = {
@@ -103,13 +104,13 @@ for name, config in configs.items():
         initial_model = booted_model
 
     trainer_manager = SeqTrainerManager()
-    trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
+    trainer_params = TrainerParams(trainer_class=CPUTrainer, optimizer='sgd', epochs=epochs, batch_size=batch_size,
                                    criterion='cel', lr=0.1)
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
         trainer_config=trainer_params,
         aggregator=aggregators.AVGAggregator(),
-        metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
+        metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss(), device='cpu'),
         client_selector=client_selectors.Random(config['clients_per_round']),
         trainers_data_dict=client_data,
         initial_model=initial_model,
@@ -119,7 +120,6 @@ for name, config in configs.items():
     )
 
     federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
-    federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
     federated.add_subscriber(SQLiteLogger(f'genetic_cluster_test_{name}', db_name))
     logger.info("----------------------")
     logger.info(f"start federated {name}")

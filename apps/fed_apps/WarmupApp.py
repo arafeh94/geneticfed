@@ -1,11 +1,10 @@
 import typing
 
-from src.apis.extensions import TorchModel
+from src.apis.extensions import TorchModel, Dict
 from src.app.federated_app import FederatedApp
 from src.app.session import Session
 from src.app.settings import Settings
 from src.data.data_container import DataContainer
-from src.tools import Dict
 from src.apis import lambdas
 
 

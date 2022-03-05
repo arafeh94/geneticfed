@@ -1,14 +1,12 @@
 import logging
 import math
 import statistics
-from typing import Union
 
 from numpy.random import default_rng
 import random
 import numpy as np
 
 from apps.genetic_selectors.algo.cluster_selector import ClusterSelector
-from src.apis.extensions import Dict
 
 logger = logging.getLogger('ga')
 
@@ -116,7 +114,6 @@ def ga(fitness, genes: ClusterSelector, desired, max_iter, r_cross=0.1, r_mut=0.
         scores = [fitness(chromosome) for chromosome in population]
         for index, ch in enumerate(population):
             if scores[index] < minimize:
-                solutions_ref[n_iter].append(scores[index])
                 minimize = scores[index]
                 solution = ch
                 all_solutions.append(ch)

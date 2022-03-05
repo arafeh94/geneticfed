@@ -3,7 +3,6 @@ from random import randint
 
 from matplotlib import pyplot as plt, patches
 
-from src import tools
 
 random.seed(10)
 x = []

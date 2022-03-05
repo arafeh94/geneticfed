@@ -1,53 +1,13 @@
 import copy
-import math
 import typing
-from datetime import datetime, timedelta
-
 import numpy as np
 import torch
 import tqdm
-from sklearn import decomposition
 from torch import nn
 import logging
 from src.data.data_container import DataContainer
 
 logger = logging.getLogger('tools')
-
-
-def dict_select(idx, dict_ref):
-    new_dict = {}
-    for i in idx:
-        new_dict[i] = dict_ref[i]
-    return new_dict
-
-
-def transform_tensor_to_list(model_params):
-    for k in model_params.keys():
-        model_params[k] = model_params[k].detach().numpy().tolist()
-    return model_params
-
-
-def flatten_weights(weights, compress=False):
-    weight_vecs = []
-    for _, weight in weights.items():
-        weight_vecs.extend(weight.flatten().tolist())
-    if compress:
-        return compress_weights(np.array(weight_vecs))
-    return np.array(weight_vecs)
-
-
-def compress_weights(flattened_weights):
-    weights = flattened_weights.reshape(10, -1)
-    pca = decomposition.PCA(n_components=4)
-    pca.fit(weights)
-    weights = pca.transform(weights)
-    return weights.flatten()
-
-
-def timed_func(seconds, callable: typing.Callable):
-    stop = datetime.now() + timedelta(seconds=seconds)
-    while datetime.now() < stop:
-        callable()
 
 
 def train(model, train_data, epochs=10, lr=0.1):
@@ -122,64 +82,6 @@ def load(model, stats):
     model.load_state_dict(stats)
 
 
-def influence_ecl(aggregated, model):
-    all = []
-    for key in aggregated.keys():
-        l2_norm = torch.dist(aggregated[key], model[key], 2)
-        val = l2_norm.numpy().min()
-        all.append(val)
-    return math.fsum(all) / len(all)
-
-
-def influence_cos(model1, model2, aggregated):
-    cos = nn.CosineSimilarity(dim=0, eps=1e-6)
-    center = torch.flatten(aggregated["linear.weight"])
-    p1 = torch.flatten(model1["linear.weight"])
-    p2 = torch.flatten(model2["linear.weight"])
-    p1 = torch.subtract(center, p1)
-    p2 = torch.subtract(center, p2)
-    return cos(p1, p2).numpy().min()
-
-
-def influence_cos2(aggregated, model):
-    cos = nn.CosineSimilarity(dim=0, eps=1e-6)
-    x1 = torch.flatten(aggregated["linear.weight"])
-    x2 = torch.flatten(model["linear.weight"])
-    return cos(x1, x2).numpy().min()
-
-
-def normalize(arr, z1=False):
-    if z1:
-        return (arr - min(arr)) / (max(arr) - min(arr))
-    return np.array(arr) / math.fsum(arr)
-
-
-class Dict:
-    @staticmethod
-    def select(idx, dict_ref):
-        new_dict = {}
-        for i in idx:
-            new_dict[i] = dict_ref[i]
-        return new_dict
-
-    @staticmethod
-    def but(keys, dict_ref):
-        new_dict = {}
-        for item, val in dict_ref.items():
-            if item not in keys:
-                new_dict[item] = val
-        return new_dict
-
-    @staticmethod
-    def concat(first, second):
-        new_dict = {}
-        for item, val in first.items():
-            new_dict[item] = val
-        for item, val in second.items():
-            new_dict[item] = val
-        return new_dict
-
-
 def detail(client_data: typing.Union[typing.Dict[int, DataContainer], DataContainer], selection=None,
            display: typing.Callable = None):
     if display is None:
@@ -201,11 +103,3 @@ def detail(client_data: typing.Union[typing.Dict[int, DataContainer], DataContai
             percentage = unique_count / len(data.y) * 100
             percentage = int(percentage)
             display(f"labels_{unique}= {percentage}% - {unique_count}")
-
-
-def compress(weights, output_dim, n_components):
-    weights = weights.flatten().reshape(output_dim, -1)
-    pca = decomposition.PCA(n_components=n_components)
-    pca.fit(weights)
-    weights = pca.transform(weights)
-    return weights.flatten()

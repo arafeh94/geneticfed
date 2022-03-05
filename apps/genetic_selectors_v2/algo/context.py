@@ -10,13 +10,33 @@ from matplotlib import pyplot
 from sklearn import decomposition
 from sklearn.cluster import KMeans
 import logging
+
+from apps.genetic_selectors.algo.cluster_selector import ClusterSelector
 from src.apis import utils, math, federated_tools
-from src.apis.extensions import Serializable
-from src.apis.rw import IODict
+from src.apis.extensions import Serializable, Dict
 from src.data.data_container import DataContainer
 
 
-class Context(Serializable):
+class SelectorContext:
+    def __init__(self, model_stats, sample_dict):
+        self.model_stats = model_stats
+        self.sample_dict = sample_dict
+        self.solutions = Dict()
+        self.clustered_models = ClusterSelector(utils.cluster(model_stats, compress_weights=False))
+
+    def ecl(self, client_idx):
+        aggregated = federated_tools.aggregate(utils.dict_select(client_idx, self.model_stats),
+                                               utils.dict_select(client_idx, self.sample_dict))
+        influences = []
+        for key in client_idx:
+            influence = math.influence_ecl(aggregated, self.model_stats[key])
+            influences.append(influence)
+        fitness = statistics.variance(math.normalize(influences))
+        fitness = fitness * 10 ** 5
+        return fitness
+
+
+class InitiatorContext(Serializable):
     def __init__(self, clients_data: {int: DataContainer}, create_model: callable, saved_model_path='./saved_models'):
         super().__init__(saved_model_path)
         self.clients_data: {int: DataContainer} = clients_data
@@ -56,32 +76,9 @@ class Context(Serializable):
         self.logging.info("Building Models --Finished")
         self.save()
 
-    def cluster(self, cluster_size=10, compress=True):
-        self.logging.info("Clustering Models --Started")
-        weights = []
-        client_ids = []
-        clustered = {}
-        for client_id, stats in self.model_stats.items():
-            client_ids.append(client_id)
-            weights.append(self.compress(utils.flatten_weights(stats))
-                           if compress else utils.flatten_weights(stats))
-        kmeans = KMeans(n_clusters=cluster_size).fit(weights)
-        print(kmeans.labels_)
-        for i, label in enumerate(kmeans.labels_):
-            clustered[client_ids[i]] = label
-        self.logging.info("Clustering Models --Finished")
-        return clustered
-
-    def compress(self, weights):
-        weights = weights.reshape(10, -1)
-        pca = decomposition.PCA(n_components=4)
-        pca.fit(weights)
-        weights = pca.transform(weights)
-        return weights.flatten()
-
     def aggregate_clients(self, client_idx):
         global_model_stats = federated_tools.aggregate(utils.dict_select(client_idx, self.model_stats),
-                                             utils.dict_select(client_idx, self.sample_dict))
+                                                       utils.dict_select(client_idx, self.sample_dict))
         global_model = self.create_model()
         federated_tools.load(global_model, global_model_stats)
         return global_model
@@ -97,7 +94,7 @@ class Context(Serializable):
 
     def ecl(self, client_idx):
         aggregated = federated_tools.aggregate(utils.dict_select(client_idx, self.model_stats),
-                                     utils.dict_select(client_idx, self.sample_dict))
+                                               utils.dict_select(client_idx, self.sample_dict))
         influences = []
         for key in client_idx:
             influence = math.influence_ecl(aggregated, self.model_stats[key])

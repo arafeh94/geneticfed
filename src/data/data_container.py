@@ -1,5 +1,7 @@
 import copy
 import typing
+
+import numpy
 import numpy as np
 import torch
 from src.apis.extensions import Functional
@@ -87,6 +89,9 @@ class DataContainer(Functional):
                 new_x.append(x)
                 new_y.append(y)
         return self._from_list(new_x, new_y)
+
+    def resize(self, lower_bound, upper_bound):
+        return DataContainer(self.x[lower_bound:upper_bound], self.y[lower_bound:upper_bound])
 
     def map(self, mapper: typing.Callable[[typing.List, int], typing.Tuple[typing.List, int]]) -> 'DataContainer':
         current = self.as_list()

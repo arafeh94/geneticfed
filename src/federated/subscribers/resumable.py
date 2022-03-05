@@ -1,11 +1,11 @@
 import copy
 import logging
 from src.apis.rw import IODict
-from src.federated.events import FederatedEventPlug
+from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 
 
-class Resumable(FederatedEventPlug):
+class Resumable(FederatedSubscriber):
     def __init__(self, io: IODict, save_ratio=5, verbose=logging.INFO):
         super().__init__()
         self.verbose = verbose

@@ -33,13 +33,23 @@ class Graphs:
             res[key] = default_value(key)
         return res
 
-    def plot(self, configs: list, title='', animated=False):
+    def plot(self, configs: list, title='', animated=False, save_path=''):
         """
         Args:
             configs: a array of dictionaries containing session_id: the session id in the database, field: the field name in the table,
                 config: the plot configurations, transform: a callable to transform the values to another
             title: the title of the plot
             animated: animate the image (require the original plot to be shown not the one in intellij
+            save_path: save location if needed
+            example:
+            graphs.plot([
+                {
+                    'session_id': 'dbs_table_name',
+                    'field': 'dbs_table_field_name',
+                    'config': {'color': 'b'},
+                    'transform': some_transformation_function
+                },
+            ])
         """
         tables = self._db.tables()
         sessions = [(item['session_id'], item['field'], item['config'] if 'config' in item else {},
@@ -72,4 +82,6 @@ class Graphs:
         plt.ylabel('Accuracy')
         plt.title(title)
         plt.legend(loc='lower right')
+        if save_path and not animated:
+            plt.savefig(save_path)
         plt.show()

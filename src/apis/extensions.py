@@ -3,7 +3,7 @@ import logging
 import os
 import pickle
 import typing
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 import numpy as np
 import torch
@@ -45,18 +45,19 @@ class Functional(typing.Generic[T]):
 
 class Dict(typing.Dict[K, V], Functional):
 
-    def __init__(self, iter_map: typing.Dict[K, V] = {}):
+    # noinspection PyDefaultArgument
+    def __init__(self, iter_map: typing.Dict[K, V] = {}, default=None):
         super().__init__(iter_map)
+        self.default = default
+
+    def __getitem__(self, key):
+        if key not in self:
+            self[key] = self.default
+        return super(Dict, self).__getitem__(key)
 
     def for_each(self, func: typing.Callable) -> typing.NoReturn:
         for key, val in self.items():
             func(key, val)
-
-    def concat(self, other) -> 'Dict[K, V]':
-        new_dict = copy.deepcopy(self)
-        for item, val in other.items():
-            new_dict[item] = val
-        return new_dict
 
     def select(self, keys) -> 'Dict[K, V]':
         return Dict({key: self[key] for key in keys})
@@ -76,10 +77,20 @@ class Dict(typing.Dict[K, V], Functional):
         return new_dict
 
     def reduce(self, func: typing.Callable[[B, K, V], B]) -> 'B':
-        first = None
+        first_item = None
         for key, val in self.items():
-            first = func(first, key, val)
-        return first
+            first_item = func(first_item, key, val)
+        return first_item
+
+    def but(self, keys):
+        new_dict = {}
+        for item, val in self.items():
+            if item not in keys:
+                new_dict[item] = val
+        return new_dict
+
+    def concat(self, other):
+        self.update(other)
 
 
 class Array(typing.List[V], Functional):
@@ -156,7 +167,7 @@ class TorchModel:
         self.model = model
         self.logger = logging.getLogger('TorchModel')
 
-    def train(self, batched: 'DataContainer', **kwargs):
+    def train(self, batched, **kwargs):
         r"""
         Args:
             batched:
@@ -171,19 +182,19 @@ class TorchModel:
 
         """
         model = self.model
-        epochs = kwargs.get('epochs', 10)
-        learn_rate = kwargs.get('lr', 0.003)
+        epochs = kwargs.get('epochs', 1)
+        learn_rate = kwargs.get('lr', 0.01)
         momentum = kwargs.get('momentum', 0)
         optimizer = kwargs.get('optimizer', torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=momentum))
         criterion = kwargs.get('criterion', nn.CrossEntropyLoss())
-        device = torch.device(kwargs['device'] if 'device' in kwargs['device'] else
-                              'cuda' if torch.cuda.is_available() else 'cpu')
+        device = kwargs['device'] if 'device' in kwargs else ('cuda' if torch.cuda.is_available() else 'cpu')
         verbose = kwargs.get('verbose', 1)
         model.to(device)
         model.train()
-        iterator = tqdm.tqdm(range(epochs), 'training') if verbose else range(epochs)
-
+        data_size = len(batched) * len(batched[0][0])
+        iterator = tqdm.tqdm(range(epochs), 'training')
         for _ in iterator:
+            correct = 0
             for batch_idx, (x, labels) in enumerate(batched):
                 x = x.to(device)
                 labels = labels.to(device)
@@ -192,7 +203,9 @@ class TorchModel:
                 loss = criterion(log_probs, labels)
                 loss.backward()
                 optimizer.step()
-
+                correct += (log_probs.max(dim=1)[1] == labels).float().sum()
+            accuracy = round(100 * (float(correct) / data_size), 2)
+            iterator.set_postfix_str(f"accuracy: {accuracy}")
         weights = model.cpu().state_dict()
         return weights
 

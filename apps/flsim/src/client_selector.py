@@ -1,10 +1,8 @@
 import operator
 from collections import defaultdict
 from typing import List
-
 import numpy as np
-
-from src import tools
+from src.apis import utils
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import ClientSelector
 
@@ -18,7 +16,7 @@ class RLSelector(ClientSelector):
         self.w_previous = w_first
 
     def select(self, client_ids: List[int], context: FederatedLearning.Context) -> List[int]:
-        w_current = tools.flatten_weights(context.model.state_dict())
+        w_current = utils.flatten_weights(context.model.state_dict())
         w_previous = self.w_previous
         model_direction = w_current - w_previous
         model_direction = model_direction / np.sqrt(np.dot(model_direction, model_direction))

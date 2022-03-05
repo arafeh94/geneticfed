@@ -4,7 +4,6 @@ import typing
 from torch import nn
 
 from apps.genetic_selectors.algo.cluster_selector import ClusterSelector
-from src import tools
 from apps.genetic_selectors.algo import genetic
 from apps.genetic_selectors.algo.context import Context
 

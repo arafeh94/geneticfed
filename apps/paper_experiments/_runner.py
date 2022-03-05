@@ -28,14 +28,14 @@ def run_command(execution, force=False):
 
 key_tests = {
     'mnist': test_cases.build({
-        'epoch': [500],
-        'batch': [50],
-        'round': [500],
-        'client_ratio': [0.001],
-        'dataset': ['cifar10'],
-        'learn_rate': [0.001],
-        'tag': ['genetic'],
-        'shard': [10]
+        'epoch': [1],
+        'batch': [1000],
+        'round': [100],
+        'client_ratio': [0.1],
+        'dataset': ['mnist'],
+        'learn_rate': [0.1],
+        'tag': ['genetic', 'basic', 'warmup', 'clustering_original'],
+        'shard': [2]
     }),
 }
 

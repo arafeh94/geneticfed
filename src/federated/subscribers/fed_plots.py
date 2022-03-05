@@ -3,13 +3,12 @@ import sys
 from abc import abstractmethod
 from matplotlib import pyplot as plt
 from scipy.stats import wasserstein_distance
-from src import tools
-from src.federated.events import FederatedEventPlug
+from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 import os, psutil
 
 
-class BasePlotter(FederatedEventPlug):
+class BasePlotter(FederatedSubscriber):
     def __init__(self, plot_ratio=1, show_plot=True, save_dir=None):
         super().__init__()
         self.plot_ratio = plot_ratio if plot_ratio else sys.maxsize
@@ -167,7 +166,7 @@ class EMDWeightDivergence(BasePlotter):
 
     def _get_average_weight_divergence(self, global_model_dict, trainers_weights):
         all_results = []
-        flattened_global_weights = tools.flatten_weights(global_model_dict)
+        flattened_global_weights = utils.flatten_weights(global_model_dict)
         for trained_id, trainers_weight in trainers_weights.items():
             flattened_trainer_weights = tools.flatten_weights(trainers_weight)
             result = wasserstein_distance(flattened_global_weights, flattened_trainer_weights)

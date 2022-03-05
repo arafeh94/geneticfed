@@ -310,7 +310,7 @@ class ManualDistributor(Distributor):
 
 class PipeDistributor(Distributor):
     @staticmethod
-    def pick_by_label_id(label_ids: list, size, repeat):
+    def pick_by_label_id(label_ids: list, size, repeat=1):
         def picker(grouper: LabelDistributor.Grouper):
             per_label_size = int(size / len(label_ids))
             clients = []

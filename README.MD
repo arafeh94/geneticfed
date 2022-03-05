@@ -337,7 +337,6 @@ all_in_one.for_each(lambda x, y: print(x))
 # example 2
 # train a model from distributed clients data
 from libs.model.cv.cnn import CNN
-from src import tools
 
 clients_data = data_loader.mnist_10shards_100c_400min_400max()
 all_data = clients_data.reduce(dict2dc).map(r28c28).as_tensor()
