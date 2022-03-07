@@ -6,10 +6,6 @@ setproctitle
 psutil
 mysql-connector-python
 matplotlib
--f https://download.pytorch.org/whl/cu113/torch_stable.html
-torch
-torchvision
-torchaudio
 scipy
 Pillow
 validators
@@ -19,3 +15,7 @@ tqdm
 schedule
 mega.py
 apscheduler
+-f https://download.pytorch.org/whl/cu113/torch_stable.html
+torch
+torchvision
+torchaudio

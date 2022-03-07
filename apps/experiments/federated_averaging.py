@@ -1,11 +1,10 @@
 import logging
 import sys
 
-from src.apis import lambdas
-from src.apis.resources import RamTracker, CPUTracker
-
 sys.path.append('../../')
 
+from src.apis import lambdas
+from src.apis.resources import RamTracker, CPUTracker
 from torch import nn
 from src.federated.subscribers.fed_plots import EMDWeightDivergence, RoundAccuracy, RoundLoss
 from src.federated.subscribers.logger import FederatedLogger
