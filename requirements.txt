@@ -1,5 +1,5 @@
 scikit-learn
-numpy==1.22.2
+numpy~=1.20.3
 h5py
 setproctitle
 networkx
