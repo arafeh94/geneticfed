@@ -28,21 +28,21 @@ def variance(data, each=30):
 graphs = Graphs(FedDB('./cache/perf.db'))
 print(graphs)
 graphs.plot([{
-        'session_id': 'noniid',
-        'field': 'acc',
-        'config': {'color': 'r', 'linestyle': '--'},
-    },
+    'session_id': 'noniid',
+    'field': 'acc',
+    'config': {'color': 'r', 'linestyle': '--'},
+},
 ], animated=0.05)
 
 graphs.plot([{
-        'session_id': 'noniid',
-        'field': 'loss',
-        'config': {'color': 'r', 'linestyle': '--'},
-    },
+    'session_id': 'noniid',
+    'field': 'loss',
+    'config': {'color': 'r', 'linestyle': '--'},
+},
 ], animated=0.05)
 graphs.plot([{
-        'session_id': 'noniid',
-        'field': 'wd',
-        'config': {'color': 'r', 'linestyle': '--'},
-    },
+    'session_id': 'noniid',
+    'field': 'wd',
+    'config': {'color': 'r', 'linestyle': '--'},
+},
 ], animated=0.05)

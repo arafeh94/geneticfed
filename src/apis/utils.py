@@ -53,7 +53,7 @@ def cluster(client_weights: Dict, cluster_size=10, compress_weights=True):
         client_ids.append(client_id)
         weights.append(compress(flatten_weights(stats), 4)
                        if compress_weights else flatten_weights(stats))
-    kmeans = KMeans(n_clusters=cluster_size).fit(weights)
+    kmeans: KMeans = KMeans(n_clusters=cluster_size).fit(weights)
     logger.info(kmeans.labels_)
     for i, label in enumerate(kmeans.labels_):
         clustered[client_ids[i]] = label

@@ -116,7 +116,6 @@ def ga(fitness, genes: ClusterSelector, desired, max_iter, r_cross=0.1, r_mut=0.
         scores = [fitness(chromosome) for chromosome in population]
         for index, ch in enumerate(population):
             if scores[index] < minimize:
-                solutions_ref[n_iter].append(scores[index])
                 minimize = scores[index]
                 solution = ch
                 all_solutions.append(ch)

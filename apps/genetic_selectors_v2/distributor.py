@@ -10,11 +10,16 @@ def get_distributor():
     pipes = []
     for i in range(25):
         pipes.append(PipeDistributor.pick_by_label_id(random.sample(range(0, 9), 2), 50))
-    for i in range(75):
+    for i in range(25):
+        pipes.append(PipeDistributor.pick_by_label_id(random.sample(range(0, 9), 5), 50))
+    for i in range(25):
         pipes.append(PipeDistributor.pick_by_label_id(random.sample(range(0, 9), 2), 750))
+    for i in range(25):
+        pipes.append(PipeDistributor.pick_by_label_id(random.sample(range(0, 9), 5), 750))
 
     return PipeDistributor(pipes)
 
 
 def get_distributed_data():
-    return preload('mnist', get_distributor(), tag='pipe_distributed_data_random')
+    return preload('fall_ar_by_client', get_distributor(), tag='pipe_distributed_data_random_unfair')
+

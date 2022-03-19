@@ -36,7 +36,7 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=50, criterion=nn.CrossEntropyLoss()),
     client_selector=client_selectors.Random(0.4),
     trainers_data_dict=client_data,
-    initial_model=lambda: LogisticRegression(11, 3),
+    initial_model=lambda: LogisticRegression(12, 3),
     num_rounds=50,
     desired_accuracy=0.99
 )

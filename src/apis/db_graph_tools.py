@@ -33,10 +33,13 @@ class Graphs:
             res[key] = default_value(key)
         return res
 
-    def plot(self, configs: list, title='', animated=False, save_path=''):
+    def plot(self, configs: list, title='', animated=False, save_path='', xlabel='', ylabel=''):
         """
         Args:
-            configs: a array of dictionaries containing session_id: the session id in the database, field: the field name in the table,
+            xlabel:
+            ylabel:
+            configs: a array of dictionaries containing session_id: the session id in the database,
+                field: the field name in the table,
                 config: the plot configurations, transform: a callable to transform the values to another
             title: the title of the plot
             animated: animate the image (require the original plot to be shown not the one in intellij
@@ -78,8 +81,8 @@ class Graphs:
         else:
             for session_id, field, config, transform in sessions:
                 plt.plot(session_values[f'{session_id}_{field}_{str(transform)}'], **config)
-        plt.xlabel('Rounds')
-        plt.ylabel('Accuracy')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.title(title)
         plt.legend(loc='lower right')
         if save_path and not animated:

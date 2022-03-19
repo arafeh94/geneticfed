@@ -24,6 +24,7 @@ class ClientSelectionCounter(FederatedSubscriber):
         trainers_ids, context = params['trainers_ids'], params['context']
         for trainer_id in trainers_ids:
             self.client_counter[trainer_id] += 1
+        context.store(selection_counter=json.dumps(self.client_counter))
 
     def on_federated_ended(self, params):
         logging.getLogger('selection_counter').info(self.client_counter)
@@ -35,7 +36,6 @@ class ClientSelectionCounter(FederatedSubscriber):
 class ShowDataDistribution(FederatedSubscriber):
     def __init__(self, label_count, save_dir=None):
         super().__init__()
-        self.logger = logging.getLogger('data_distribution')
         self.label_count = label_count
         self.save_dir = save_dir
         if save_dir is not None:
@@ -43,22 +43,24 @@ class ShowDataDistribution(FederatedSubscriber):
 
     def on_federated_started(self, params):
         clients_data: Dict[int, DataContainer] = params['trainers_data_dict']
-        self.plot(clients_data)
+        self.plot(clients_data, self.label_count, self.save_dir)
 
-    def plot(self, clients_data):
+    @staticmethod
+    def plot(clients_data: Dict[int, DataContainer], label_count: int, save_dir=None):
         tick = time.time()
-        self.logger.info('building data distribution...')
+        logger = logging.getLogger('data_distribution')
+        logger.info('building data distribution...')
         ids = list(clients_data.keys())
         id_mapper = lambda id: ids.index(id)
 
-        client_label_count = np.zeros((len(clients_data), self.label_count))
+        client_label_count = np.zeros((len(clients_data), label_count))
         for client_id, data in clients_data.items():
             for y in data.y:
-                client_label_count[id_mapper(client_id)][y] += 1
-        save_dir = f"{self.save_dir}/data_distribution.png" if self.save_dir is not None else None
+                client_label_count[id_mapper(client_id)][int(y)] += 1
+        save_dir = f"{save_dir}/data_distribution.png" if save_dir is not None else None
         client_label_count = np.transpose(client_label_count)
-        plots.heatmap(client_label_count, 'Clients Data Distribution', 'y:Client - x:Class', save_dir)
-        self.logger.info(f'building data distribution finished {time.time() - tick}')
+        plots.heatmap(client_label_count, 'Clients Data Distribution', 'x:Client - y:Class', save_dir)
+        logger.info(f'building data distribution finished {time.time() - tick}')
 
 
 class ShowWeightDivergence(FederatedSubscriber):

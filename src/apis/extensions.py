@@ -46,14 +46,8 @@ class Functional(typing.Generic[T]):
 class Dict(typing.Dict[K, V], Functional):
 
     # noinspection PyDefaultArgument
-    def __init__(self, iter_map: typing.Dict[K, V] = {}, default=None):
+    def __init__(self, iter_map: typing.Dict[K, V] = {}):
         super().__init__(iter_map)
-        self.default = default
-
-    def __getitem__(self, key):
-        if key not in self:
-            self[key] = self.default
-        return super(Dict, self).__getitem__(key)
 
     def for_each(self, func: typing.Callable) -> typing.NoReturn:
         for key, val in self.items():
@@ -268,6 +262,9 @@ class TorchModel:
 
     def extract(self):
         return self.model
+
+    def state(self):
+        return self.extract().state_dict()
 
 
 def first(items: list):

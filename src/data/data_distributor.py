@@ -5,8 +5,11 @@ from collections import defaultdict
 import numpy as np
 import typing
 from libs.data_distribute import non_iid_partition_with_dirichlet_distribution
+from src.apis import lambdas
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
+
+
 
 
 class Distributor:
@@ -121,6 +124,7 @@ class LabelDistributor(Distributor):
                 else:
                     client_x = rx if len(client_x) == 0 else np.concatenate((client_x, rx))
                     client_y = ry if len(client_y) == 0 else np.concatenate((client_y, ry))
+            grouper.clean()
             clients_data[client_id] = DataContainer(client_x, client_y).as_tensor()
         return Dict(clients_data)
 
@@ -149,6 +153,12 @@ class LabelDistributor(Distributor):
             self.label_cursor = (self.label_cursor + 1) % len(self.all_labels)
             return self.all_labels[temp]
 
+        def clean(self):
+            for label, records in self.grouped.items():
+                if label in self.selected and self.selected[label] >= len(records):
+                    print('cleaning the good way')
+                    del self.all_labels[self.all_labels.index(label)]
+
         def get(self, label, size=0):
             if size == 0:
                 size = len(self.grouped[label])
@@ -156,6 +166,7 @@ class LabelDistributor(Distributor):
             y = [label] * len(x)
             self.selected[label] += size
             if len(x) == 0 and label in self.all_labels:
+                print('cleaning the wrong way')
                 del self.all_labels[self.all_labels.index(label)]
             return x, y
 

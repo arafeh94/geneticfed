@@ -57,7 +57,7 @@ class InitiatorContext(Serializable):
         self.logging.info("Building Models --Started")
 
         for client_idx, data in self.clients_data.items():
-            if data_ratio > 0:
+            if 0 < data_ratio < 1:
                 shuffled = data.shuffle().as_tensor()
                 new_x = shuffled.x[0:int(len(data.x) * data_ratio)]
                 new_y = shuffled.y[0:int(len(data.y) * data_ratio)]
@@ -65,14 +65,10 @@ class InitiatorContext(Serializable):
             self.logging.info(f"Building Models --ClientID{client_idx}")
             model = copy.deepcopy(self.init_model)
             trained = federated_tools.train(model, data.batch(batch), epochs=epochs, lr=lr)
+            print(trained)
             self.model_stats[client_idx] = trained
             self.models[client_idx] = model
             self.sample_dict[client_idx] = len(data)
-            for key in trained:
-                if torch.prod(torch.isnan(trained[key])) != 0:
-                    for image in data.as_tensor().x:
-                        pyplot.imshow(image.view(28, 28))
-                        pyplot.show()
         self.logging.info("Building Models --Finished")
         self.save()
 

@@ -12,13 +12,13 @@ from src.federated.federated import FederatedLearning
 
 # noinspection SqlNoDataSourceInspection
 class SQLiteLogger(FederatedSubscriber):
-    def __init__(self, id, db_path=manifest.DB_PATH, tag=''):
+    def __init__(self, id, db_path=manifest.DB_PATH, config=''):
         super().__init__()
         self.id = id
         self.con = sqlite3.connect(db_path)
         self.check_table_creation = True
         self._logger = logging.getLogger('sqlite')
-        self.tag = str(tag)
+        self.tag = str(config)
         self._check_table_name()
 
     def on_federated_started(self, params):

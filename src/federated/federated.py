@@ -199,9 +199,11 @@ class FederatedLearning(Broadcaster):
             self.round_id += 1
 
         def highest_accuracy(self):
-            if len(self.history) == 0:
-                return 0
-            return self.history[max(self.history, key=lambda k: self.history[k]['acc'])]['acc']
+            highest = 0
+            for rnd in self.history:
+                if 'acc' in self.history[rnd] and self.history[rnd]['acc'] > highest:
+                    highest = self.history[rnd]['acc']
+            return highest
 
         def latest_accuracy(self):
             if len(self.history) == 0:
@@ -225,6 +227,14 @@ class FederatedLearning(Broadcaster):
             self.history.clear()
 
         def store(self, **kwargs):
+            """
+
+            Args:
+                **kwargs: kwargs is used to pass any key value similar to function, use it like store(acc=0.79)
+
+            Returns:
+
+            """
             if self.round_id not in self.history:
                 self.history[self.round_id] = Dict()
             self.history[self.round_id].update(kwargs)

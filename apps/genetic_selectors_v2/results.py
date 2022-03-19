@@ -1,9 +1,13 @@
+import json
+
+from matplotlib import pyplot as plt
+
 from src.apis.db_graph_tools import Graphs
 from src.apis.fed_sqlite import FedDB
 
 db_name = 'dbs/res1.db'
-graph = Graphs(FedDB(db_name))
-# graph = Graphs(FedDB('res_inverse.db'))
+db = FedDB(db_name)
+graph = Graphs(db)
 
 graph.plot([
     {
@@ -22,3 +26,5 @@ graph.plot([
     #     'config': {'color': 'pink', 'label': 'Normal'},
     # },
 ], save_path=f'./{db_name}.png')
+
+

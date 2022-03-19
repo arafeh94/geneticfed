@@ -141,6 +141,26 @@ class DataContainer(Functional):
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
 
+    def iter(self):
+        class Iterator:
+            def __init__(self, dc: DataContainer):
+                self.dc = dc
+                self.current = 0
+
+            def __iter__(self):
+                self.current = 0
+                return self
+
+            def __next__(self):
+                if self.current < len(self.dc):
+                    current_item = (self.dc.x[self.current], self.dc.y[self.current])
+                    self.current += 1
+                    return current_item
+                else:
+                    raise StopIteration
+
+        return Iterator(self)
+
     def __getitem__(self, key):
         return DataContainer(self.x[key], self.y[key])
 

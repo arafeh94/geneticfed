@@ -22,7 +22,7 @@ client_data = preload('fall_ar_by_client').map(lambdas.as_tensor)
 logger.info(client_data)
 
 config = {
-    'epochs': 25,
+    'epochs': 1,
     'batch_size': 40000,
     'clients_per_round': 5,
     'initial_model': lambda: Cnn1D(15),

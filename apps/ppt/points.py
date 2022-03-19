@@ -35,7 +35,7 @@ def plot_lines(sx, sy):
     middle_y = sum(sy) / len(sy)
     color = colors[randint(0, len(colors) - 1)]
     for i in range(len(sx)):
-        lines = ax.plot([middle_x, sx[i]], [middle_y, sy[i]], color=color)
+        lines = ax.plot([middle_x, sx[i]], [middle_y, sy[i]])
         latest_lines.append(lines[0])
         pt = ax.scatter([middle_x], [middle_y], color=color)
         latest_lines.append(pt)
