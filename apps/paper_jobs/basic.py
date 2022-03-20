@@ -4,12 +4,11 @@ import sys
 import time
 from os.path import dirname
 
+sys.path.append(dirname(__file__) + '../../')
+
 from src.apis.rw import IODict
 from src.federated.subscribers.analysis import ClientSelectionCounter
 from src.federated.subscribers.resumable import Resumable
-
-sys.path.append(dirname(__file__) + '../../')
-
 from apps.paper_jobs import context
 from libs.model.cv.cnn import Cnn1D
 from src.apis import lambdas
