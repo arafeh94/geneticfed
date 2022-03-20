@@ -26,7 +26,7 @@ from src.federated.subscribers.sqlite_logger import SQLiteLogger
 args = context.args()
 hashed_args = context.hashed()
 
-logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.DEBUG)
+logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
 logger = logging.getLogger('main')
 client_data = preload('fall_ar_by_client').map(lambdas.as_tensor)
 logger.info(client_data)

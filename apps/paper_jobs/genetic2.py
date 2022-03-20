@@ -29,7 +29,7 @@ from apps.genetic_selectors_v2.algo.selector import GeneticSelector
 args = context.args()
 hashed_args = context.hashed()
 
-logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.DEBUG)
+logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
 
 logger = logging.getLogger('main')
 logger.info('Generating Data --Started')
