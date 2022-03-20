@@ -7,6 +7,13 @@ from src.federated.federated import FederatedLearning
 
 class Resumable(FederatedSubscriber):
     def __init__(self, io: IODict, save_ratio=5, verbose=logging.INFO):
+        """
+        usage: federated.add_subscriber(Resumable(IODict('./cache.cs')))
+        Args:
+            io:
+            save_ratio:
+            verbose:
+        """
         super().__init__()
         self.verbose = verbose
         self.logger = logging.getLogger('resumable')

@@ -9,4 +9,4 @@
 #SBATCH --output=job_main.out
 
 source  ./venv/bin/activate
-python ./apps/experiments/fedavg
+python ./apps/genetic_selectors_v2/run_genetic.py

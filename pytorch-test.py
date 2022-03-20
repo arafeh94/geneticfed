@@ -1,0 +1,11 @@
+import torch
+
+print(torch.cuda.is_available())
+
+print(torch.cuda.current_device())
+
+print(torch.cuda.device_count())
+
+for i in range(torch.cuda.device_count()):
+    print(torch.cuda.device(i))
+    torch.cuda.get_device_name(i)

@@ -1,50 +1,46 @@
+import calendar
 import logging
 import sys
-from datetime import datetime
+import time
 from os.path import dirname
-from pathlib import Path
 
+from src.apis.rw import IODict
+from src.federated.subscribers.resumable import Resumable
+
+sys.path.append(dirname(__file__) + '../../')
+
+from apps.paper_jobs import context
 from libs.model.cv.cnn import Cnn1D
 from src.apis import lambdas
-from src.apis.extensions import TorchModel
 from src.data.data_loader import preload
-from src.data.data_tools import iidness
-
-sys.path.append(dirname(__file__) + '../')
 from torch import nn
-from libs.model.linear.lr import LogisticRegression
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
-from src.federated.components.trainers import CPUTrainer, TorchTrainer
+from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
 from src.federated.components import metrics, aggregators
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
-from src.federated.subscribers.analysis import ClientSelectionCounter, ShowDataDistribution
-
-from apps.genetic_selectors_v2 import distributor
+from src.federated.subscribers.analysis import ClientSelectionCounter
 from apps.genetic_selectors_v2.algo import initializer
 from apps.genetic_selectors_v2.algo.selector import GeneticSelector
 
-logging.basicConfig(level=logging.INFO)
+args = context.args()
+
+logging.basicConfig(filename=f'{args.tag}.log', filemode='w', datefmt='%H:%M:%S', level=logging.DEBUG)
+
 logger = logging.getLogger('main')
-db_name = './results.db'
-experiment_name = f'test_2'
 logger.info('Generating Data --Started')
-client_data = preload('fall_ar_by_client').map(lambdas.as_list).map(lambda cid, dt: dt.filter(lambda x, y: y != 0)) \
-    .map(lambda cid, dt: dt.map(lambda x, y: (x, y - 1)))
-print(iidness(client_data, 13, by_label=True))
-ShowDataDistribution.plot(client_data.map(lambdas.as_list), 13)
-exit(1)
+client_data = preload('fall_ar_by_client').map(lambdas.as_tensor)
 logger.info('Generating Data --Ended')
 
-configs = {
+config = {
     # federated learning configs
-    'batch_size': 80_000,
-    'epochs': 5,
-    'clients_per_round': 4,
-    'num_rounds': 10,
+    'batch_size': args.batch,
+    'epochs': args.epochs,
+    'clients_per_round': args.clients_ratio,
+    'num_rounds': args.round,
     'desired_accuracy': 0.99,
     'model': lambda: Cnn1D(15),
     # genetic_configs
@@ -58,27 +54,28 @@ configs = {
 }
 
 initiator, initial_model = initializer.ga_module_creator(
-    client_data, configs['model'], configs, epoch=50,
-    batch=configs['batch_size'], lr=0.01)
-client_selector = GeneticSelector(initiator, configs['clients_per_round'], configs)
+    client_data, config['model'], config, epoch=50,
+    batch=config['batch_size'], lr=0.01)
+client_selector = GeneticSelector(initiator, config['clients_per_round'], config)
 
 trainer_manager = SeqTrainerManager()
-trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=configs['epochs'],
-                               batch_size=configs['batch_size'], criterion='cel', lr=0.01)
+trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=config['epochs'],
+                               batch_size=config['batch_size'], criterion='cel', lr=0.01)
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
     trainer_config=trainer_params,
     aggregator=aggregators.AVGAggregator(),
-    metrics=metrics.AccLoss(batch_size=configs['batch_size'], criterion=nn.CrossEntropyLoss()),
+    metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion=nn.CrossEntropyLoss()),
     client_selector=client_selector,
     trainers_data_dict=client_data,
     initial_model=initial_model,
-    num_rounds=configs['num_rounds'],
-    desired_accuracy=configs['desired_accuracy'],
+    num_rounds=config['num_rounds'],
+    desired_accuracy=config['desired_accuracy'],
 )
 
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
-SQLiteLogger(f'{experiment_name}', db_name).attach(federated)
+federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'{args.tag}.db', config))
+federated.add_subscriber(Resumable(IODict(f'./{args.tag}.cs')))
 ClientSelectionCounter(save_dir='plots/').attach(federated)
 client_selector.attach(federated)
 logger.info("----------------------")

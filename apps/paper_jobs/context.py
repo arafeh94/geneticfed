@@ -1,0 +1,13 @@
+import argparse
+
+
+def args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--epoch', type=int, help='epochs count')
+    parser.add_argument('-b', '--batch', type=int, help='batch count')
+    parser.add_argument('-r', '--round', type=int, help='number of rounds')
+    parser.add_argument('-cr', '--clients_ratio', type=float, help='selected client percentage for fl')
+    parser.add_argument('-lr', '--learn_rate', type=float, help='learn rate')
+    parser.add_argument('-t', '--tag', type=str, help='tag to save the results')
+    parser.add_argument('-cln', '--clients_number', type=int, help='number of participating clients')
+    return parser.parse_args()
