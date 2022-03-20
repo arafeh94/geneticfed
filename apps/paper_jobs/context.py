@@ -15,5 +15,5 @@ def args():
     return parser.parse_args()
 
 
-def hashed():
-    return hashlib.md5(str(vars(args)).encode()).hexdigest()
+def hashed(parsed_args):
+    return hashlib.md5(str(vars(parsed_args)).encode()).hexdigest()
