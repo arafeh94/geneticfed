@@ -4,7 +4,7 @@ import hashlib
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--epoch', type=int, help='epochs count')
+    parser.add_argument('-e', '--epochs', type=int, help='epochs count')
     parser.add_argument('-b', '--batch', type=int, help='batch count')
     parser.add_argument('-r', '--round', type=int, help='number of rounds')
     parser.add_argument('-cr', '--clients_ratio', type=float, help='selected client percentage for fl')
