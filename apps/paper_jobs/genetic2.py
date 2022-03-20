@@ -47,12 +47,12 @@ config = {
     'lr': args.learn_rate,
     'id': hashed_args,
     # genetic_configs
-    'max_iter': 10,
+    'max_iter': 15,
     'r_cross': 0.05,
     'r_mut': 0.1,
-    'c_size': 8,
+    'c_size': args.chrm_size,
     'p_size': 200,
-    'nb_clusters': 1,
+    'nb_clusters': args.nb_clusters,
     'desired_fitness': 0,
 }
 
