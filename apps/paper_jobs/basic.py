@@ -53,7 +53,7 @@ federated = FederatedLearning(
     metrics=metrics.AccLoss(batch_size=config['batch_size'], criterion='cel'),
     client_selector=client_selectors.Random(config['clients_per_round']),
     trainers_data_dict=client_data,
-    initial_model=config['initial_model'],
+    initial_model=config['model'],
     num_rounds=config['num_rounds'],
 )
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
