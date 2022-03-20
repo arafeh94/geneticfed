@@ -44,7 +44,7 @@ config = {
     'num_rounds': args.round,
     'desired_accuracy': 0.99,
     'model': lambda: Cnn1D(15),
-    'lr': args.lr,
+    'lr': args.learn_rate,
     'id': hashed_args,
     # genetic_configs
     'max_iter': 10,
