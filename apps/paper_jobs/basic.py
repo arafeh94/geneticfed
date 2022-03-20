@@ -3,8 +3,9 @@ import logging
 import sys
 import time
 from os.path import dirname
+import os
 
-sys.path.append(dirname(__file__) + '../../')
+sys.path.append(os.getcwd() + '/../../../')
 
 from src.apis.rw import IODict
 from src.federated.subscribers.analysis import ClientSelectionCounter
@@ -54,7 +55,7 @@ federated = FederatedLearning(
 )
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
 federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'{args.tag}.db', config))
-federated.add_subscriber(Resumable(IODict(f'./{args.tag}.cs')))
+federated.add_subscriber(Resumable(IODict(f'./{args.tag}_{hash(args)}.cs')))
 ClientSelectionCounter(save_dir='plots/').attach(federated)
 logger.info("----------------------")
 logger.info(f"start federated genetics")

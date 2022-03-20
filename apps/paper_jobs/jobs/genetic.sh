@@ -9,6 +9,6 @@
 #SBATCH --output=job_genetic.out
 
 module load python/3.6
-source /home/ahmmmoud/projects/def-zdziong/ahmmmoud/arafeh/geneticfed/.venv/bin/activate
+source /home/ahmmmoud/projects/def-zdziong/ahmmmoud/arafeh/geneticfed/venv/bin/activate
 
-python ../genetic2.py
+python ../genetic2.py -e 25 -b 80000 -r 500 -cr 5 -lr 0.01 -t 'genetic2'
