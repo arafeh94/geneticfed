@@ -3,6 +3,8 @@ import logging
 import os
 import time
 from collections import defaultdict
+from random import randint
+
 import numpy as np
 from matplotlib import pyplot as plt
 from src.apis import plots, utils
@@ -29,7 +31,7 @@ class ClientSelectionCounter(FederatedSubscriber):
     def on_federated_ended(self, params):
         logging.getLogger('selection_counter').info(self.client_counter)
         plt.bar(self.client_counter.keys(), self.client_counter.values())
-        plt.savefig(f"{self.save_dir}/selection_counter.png") if self.save_dir else ()
+        plt.savefig(f"{self.save_dir}") if self.save_dir else ()
         plt.show()
 
 

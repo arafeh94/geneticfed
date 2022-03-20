@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 
 
 def args():
@@ -10,3 +11,7 @@ def args():
     parser.add_argument('-lr', '--learn_rate', type=float, help='learn rate')
     parser.add_argument('-t', '--tag', type=str, help='tag to save the results')
     return parser.parse_args()
+
+
+def hashed():
+    return hashlib.md5(str(vars(args)).encode()).hexdigest()

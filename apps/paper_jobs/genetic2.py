@@ -27,8 +27,9 @@ from apps.genetic_selectors_v2.algo import initializer
 from apps.genetic_selectors_v2.algo.selector import GeneticSelector
 
 args = context.args()
+hashed_args = context.hashed()
 
-logging.basicConfig(filename=f'{args.tag}.log', filemode='w', datefmt='%H:%M:%S', level=logging.DEBUG)
+logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.DEBUG)
 
 logger = logging.getLogger('main')
 logger.info('Generating Data --Started')
@@ -43,6 +44,8 @@ config = {
     'num_rounds': args.round,
     'desired_accuracy': 0.99,
     'model': lambda: Cnn1D(15),
+    'lr': args.lr,
+    'id': hashed_args,
     # genetic_configs
     'max_iter': 10,
     'r_cross': 0.05,
@@ -60,7 +63,7 @@ client_selector = GeneticSelector(initiator, config['clients_per_round'], config
 
 trainer_manager = SeqTrainerManager()
 trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=config['epochs'],
-                               batch_size=config['batch_size'], criterion='cel', lr=0.01)
+                               batch_size=config['batch_size'], criterion='cel', lr=config['lr'])
 federated = FederatedLearning(
     trainer_manager=trainer_manager,
     trainer_config=trainer_params,
@@ -75,8 +78,8 @@ federated = FederatedLearning(
 
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
 federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'{args.tag}.db', config))
-federated.add_subscriber(Resumable(IODict(f'./{args.tag}_{hash(args)}.cs')))
-ClientSelectionCounter(save_dir='plots/').attach(federated)
+federated.add_subscriber(Resumable(IODict(f'./{args.tag}.cs'), key=f'g{hashed_args}'))
+ClientSelectionCounter(save_dir=f'./{args.tag}_{hashed_args}.png').attach(federated)
 client_selector.attach(federated)
 logger.info("----------------------")
 logger.info(f"start federated genetics")
