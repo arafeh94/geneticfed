@@ -79,7 +79,7 @@ federated = FederatedLearning(
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
 federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'{args.tag}.db', config))
 federated.add_subscriber(Resumable(IODict(f'./{args.tag}.cs'), key=f'g{hashed_args}'))
-ClientSelectionCounter(save_dir=f'.{args.tag}_{hashed_args}.png').attach(federated)
+ClientSelectionCounter(save_dir=f'{args.tag}_{hashed_args}.png').attach(federated)
 client_selector.attach(federated)
 logger.info("----------------------")
 logger.info(f"start federated genetics")

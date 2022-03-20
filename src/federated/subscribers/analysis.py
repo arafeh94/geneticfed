@@ -19,8 +19,6 @@ class ClientSelectionCounter(FederatedSubscriber):
         super().__init__()
         self.client_counter = defaultdict(int)
         self.save_dir = save_dir
-        if save_dir is not None:
-            os.makedirs(save_dir, exist_ok=True)
 
     def on_trainers_selected(self, params):
         trainers_ids, context = params['trainers_ids'], params['context']
