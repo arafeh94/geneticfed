@@ -7,8 +7,11 @@
 #SBATCH --mail-user=mohamad-arfah.dabberni.1@ens.etsmtl.ca
 #SBATCH --mail-type=ALL
 #SBATCH --output=job_basic.out
+HOME=/home/ahmmmoud/projects/def-zdziong/ahmmmoud/arafeh/geneticfed
+
 
 module load python/3.6
-source /home/ahmmmoud/projects/def-zdziong/ahmmmoud/arafeh/geneticfed/venv/bin/activate
+source ${HOME}/venv/bin/activate
+export PYTHONPATH="${PYTHONPATH}:${HOME}"
 
-python ../basic.py -e 25 -b 80000 -r 500 -cr 5 -lr 0.01 -t 'basic'
+cd results || python ../../basic.py -e 25 -b 80000 -r 500 -cr 5 -lr 0.01 -t 'basic'

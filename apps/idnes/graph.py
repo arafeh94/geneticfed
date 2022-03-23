@@ -35,7 +35,7 @@ graphs.plot([
         'field': 'acc',
         'config': {'color': 'black', 'label': "label_100c_1l_10mn_600mx {'iidness': 10312.18997979798}"},
     },
-], xlabel='Round', ylabel='Accuracy')
+], xlabel='Round', ylabel='Accuracy', plt_func=change)
 
 
 

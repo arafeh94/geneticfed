@@ -2,6 +2,7 @@ scikit-learn
 numpy~=1.20.3
 h5py
 setproctitle
+dill
 # networkx
 psutil
 mysql-connector-python

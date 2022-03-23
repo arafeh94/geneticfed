@@ -4,7 +4,9 @@ import os
 import pickle
 import typing
 from abc import abstractmethod, ABC
+from time import sleep
 
+import dill as dill
 import numpy as np
 import torch
 import tqdm
@@ -129,6 +131,7 @@ class Array(typing.List[V], Functional):
 class Serializable:
     def __init__(self, file_path):
         self.file_path = file_path
+        self.logger = logging.getLogger('Serializable')
 
     def save(self):
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
@@ -136,15 +139,28 @@ class Serializable:
         for key, item in self.__dict__.items():
             if not callable(item):
                 to_save[key] = item
-        pickle.dump(to_save, open(self.file_path, 'wb'))
+        self._flush(to_save)
+
+    def _flush(self, to_save):
+        try:
+            with open(self.file_path, 'wb') as fop:
+                dill.dump(to_save, fop)
+        except Exception as e:
+            self.logger.info(e)
+            sleep(1)
+            self._flush(to_save)
 
     def load(self):
         if self.exists():
             try:
-                for key, item in pickle.load(open(self.file_path, 'rb')).items():
-                    self.__dict__[key] = item
+                with open(self.file_path, 'rb') as fop:
+                    for key, item in dill.load(fop).items():
+                        self.__dict__[key] = item
+                return True
             except Exception as e:
-                print(e)
+                self.logger.info(e)
+                sleep(1)
+                self.load()
 
     def exists(self):
         return os.path.exists(self.file_path)

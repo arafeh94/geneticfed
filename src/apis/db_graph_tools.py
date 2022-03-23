@@ -1,10 +1,11 @@
 import math
 import sqlite3
+import typing
 from collections import defaultdict
 from typing import Callable
 
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, pyplot
 
 from src.apis import utils
 from src.apis.fed_sqlite import FedDB
@@ -33,9 +34,11 @@ class Graphs:
             res[key] = default_value(key)
         return res
 
-    def plot(self, configs: list, title='', animated=False, save_path='', xlabel='', ylabel=''):
+    def plot(self, configs: list, title='', animated=False, save_path='', xlabel='', ylabel='',
+             plt_func: Callable[[pyplot], typing.NoReturn] = None):
         """
         Args:
+            plt_func:
             xlabel:
             ylabel:
             configs: a array of dictionaries containing session_id: the session id in the database,
@@ -85,6 +88,8 @@ class Graphs:
         plt.ylabel(ylabel)
         plt.title(title)
         plt.legend(loc='lower right')
+        if callable(plt_func):
+            plt_func(plt)
         if save_path and not animated:
             plt.savefig(save_path)
         plt.show()

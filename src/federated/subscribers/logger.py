@@ -1,7 +1,30 @@
 import logging
+from typing import Union
+
+import tqdm
+
 from src.apis.extensions import Dict
 from src.federated.events import Events, FederatedSubscriber
 from src.federated.federated import FederatedLearning
+
+
+class TqdmLogger(FederatedSubscriber):
+    def __init__(self):
+        super().__init__()
+        self.tqdm: tqdm.tqdm = None
+        self.logger = logging.getLogger('tqdm')
+        self.logger.propagate = False
+        empty_handler = logging.StreamHandler()
+        empty_handler.setFormatter(logging.Formatter(''))
+        self.logger.addHandler(empty_handler)
+
+    def on_federated_started(self, params):
+        self.tqdm = tqdm.tqdm(total=params['num_rounds'], desc='INFO:tqdm:FL Progress')
+        self.logger.info('')
+
+    def on_round_start(self, params):
+        self.tqdm.update()
+        self.logger.info('')
 
 
 class FederatedLogger(FederatedSubscriber):

@@ -93,3 +93,7 @@ def timed_func(seconds, callable: typing.Callable):
     stop = datetime.now() + timedelta(seconds=seconds)
     while datetime.now() < stop:
         callable()
+
+
+def enable_logging(level=logging.INFO):
+    logging.basicConfig(level=logging.INFO)

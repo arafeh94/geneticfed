@@ -5,8 +5,6 @@ import time
 from os.path import dirname
 import os
 
-sys.path.append(os.getcwd() + '/../../../')
-
 from src.apis.rw import IODict
 from src.federated.subscribers.resumable import Resumable
 from apps.paper_jobs import context
@@ -77,9 +75,9 @@ federated = FederatedLearning(
 )
 
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
-federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'{args.tag}.db', config))
-federated.add_subscriber(Resumable(IODict(f'./{args.tag}.cs'), key=f'g{hashed_args}'))
-ClientSelectionCounter(save_dir=f'{args.tag}_{hashed_args}.png').attach(federated)
+federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'cached_results.db', config))
+federated.add_subscriber(Resumable(IODict(f'./cached_models.cs'), key=f'b{hashed_args}'))
+ClientSelectionCounter(save_dir=f'cls_{args.tag}_{hashed_args}.png').attach(federated)
 client_selector.attach(federated)
 logger.info("----------------------")
 logger.info(f"start federated genetics")

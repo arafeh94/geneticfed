@@ -25,4 +25,4 @@ graph.plot([
     #     'field': 'acc',
     #     'config': {'color': 'pink', 'label': 'Normal'},
     # },
-])
+], plt_func=change)

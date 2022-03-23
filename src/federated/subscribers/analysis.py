@@ -25,12 +25,17 @@ class ClientSelectionCounter(FederatedSubscriber):
         for trainer_id in trainers_ids:
             self.client_counter[trainer_id] += 1
         context.store(selection_counter=json.dumps(self.client_counter))
+        self.plot(show=False)
 
     def on_federated_ended(self, params):
         logging.getLogger('selection_counter').info(self.client_counter)
+        self.plot(show=True)
+
+    def plot(self, show=True):
         plt.bar(self.client_counter.keys(), self.client_counter.values())
         plt.savefig(f"{self.save_dir}") if self.save_dir else ()
-        plt.show()
+        if show:
+            plt.show()
 
 
 class ShowDataDistribution(FederatedSubscriber):

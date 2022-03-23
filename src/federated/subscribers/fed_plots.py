@@ -9,11 +9,12 @@ import os, psutil
 
 
 class BasePlotter(FederatedSubscriber):
-    def __init__(self, plot_ratio=1, show_plot=True, save_dir=None):
+    def __init__(self, plot_ratio=1, show_plot=True, save_dir=None, plot_title=None):
         super().__init__()
         self.plot_ratio = plot_ratio if plot_ratio else sys.maxsize
         self.show_plot = show_plot
         self.save_dir = save_dir
+        self.plot_title = plot_title
         if save_dir:
             os.makedirs(save_dir, exist_ok=True)
 
@@ -70,7 +71,7 @@ class RoundAccuracy(BasePlotter):
         for round_id, item in history.items():
             acc.append(item['acc'])
         plt.plot(acc)
-        plt.title('Round Accuracy')
+        plt.title(self.plot_title or 'Round Accuracy')
         return plt
 
     def final_plot(self, params):
@@ -83,7 +84,7 @@ class RoundAccuracy(BasePlotter):
 class LocalLoss(BasePlotter):
     def round_plot(self, params) -> plt:
         plt.bar(params['local_loss'].keys(), params['local_loss'].values())
-        plt.title('Local Loss')
+        plt.title(self.plot_title or 'Local Loss')
         return plt
 
     def save_file_name(self, context: FederatedLearning.Context):
@@ -99,7 +100,7 @@ class RoundLoss(BasePlotter):
         history = params['context'].history
         for round_id, item in history.items():
             acc.append(item['loss'])
-        plt.title('Round Loss')
+        plt.title(self.plot_title or 'Round Loss')
         plt.plot(acc)
         return plt
 
@@ -121,7 +122,7 @@ class CPUUsage(BasePlotter):
         return None
 
     def final_plot(self, params):
-        plt.title('CPU Usage')
+        plt.title(self.plot_title or 'CPU Usage')
         plt.plot(self.usage)
         return plt
 
@@ -155,7 +156,7 @@ class EMDWeightDivergence(BasePlotter):
         figure = plt.figure(1)
         plot = figure.add_subplot()
         plot.plot(wd)
-        plot.set_title('EMD Weight Divergence')
+        plot.set_title(self.plot_title or 'EMD Weight Divergence')
         return figure
 
     def final_plot(self, params):

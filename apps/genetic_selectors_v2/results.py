@@ -25,6 +25,6 @@ graph.plot([
     #     'field': 'acc',
     #     'config': {'color': 'pink', 'label': 'Normal'},
     # },
-], save_path=f'./{db_name}.png')
+], save_path=f'./{db_name}.png', plt_func=change)
 
 

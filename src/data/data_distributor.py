@@ -353,4 +353,4 @@ class PipeDistributor(Distributor):
         client_dict = {}
         for i in range(len(all_clients)):
             client_dict[i] = all_clients[i]
-        return client_dict
+        return Dict(client_dict)

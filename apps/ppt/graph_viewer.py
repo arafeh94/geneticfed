@@ -32,17 +32,17 @@ graphs.plot([{
     'field': 'acc',
     'config': {'color': 'r', 'linestyle': '--'},
 },
-], animated=0.05)
+], animated=0.05, plt_func=change)
 
 graphs.plot([{
     'session_id': 'noniid',
     'field': 'loss',
     'config': {'color': 'r', 'linestyle': '--'},
 },
-], animated=0.05)
+], animated=0.05, plt_func=change)
 graphs.plot([{
     'session_id': 'noniid',
     'field': 'wd',
     'config': {'color': 'r', 'linestyle': '--'},
 },
-], animated=0.05)
+], animated=0.05, plt_func=change)

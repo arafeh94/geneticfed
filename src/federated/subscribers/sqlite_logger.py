@@ -15,7 +15,7 @@ class SQLiteLogger(FederatedSubscriber):
     def __init__(self, id, db_path=manifest.DB_PATH, config=''):
         super().__init__()
         self.id = id
-        self.con = sqlite3.connect(db_path)
+        self.con = sqlite3.connect(db_path, timeout=1000)
         self.check_table_creation = True
         self._logger = logging.getLogger('sqlite')
         self.tag = str(config)

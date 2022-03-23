@@ -5,12 +5,13 @@ import time
 from os.path import dirname
 import os
 
+from libs.model.linear.lr import LogisticRegression
 from src.apis.rw import IODict
+from src.data.data_distributor import LabelDistributor
 from src.federated.subscribers.analysis import ClientSelectionCounter
+from src.federated.subscribers.fed_plots import RoundAccuracy
 from src.federated.subscribers.resumable import Resumable
 from apps.paper_jobs import context
-from libs.model.cv.cnn import Cnn1D
-from src.apis import lambdas
 from src.data.data_loader import preload
 from src.federated.components import aggregators, metrics, client_selectors
 from src.federated.components.trainer_manager import SeqTrainerManager
@@ -26,7 +27,7 @@ hashed_args = context.hashed(args)
 
 logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
 logger = logging.getLogger('main')
-client_data = preload('fall_ar_by_client').map(lambdas.as_tensor)
+client_data = preload('mnist', LabelDistributor(100, 10, 600, 600))
 logger.info(client_data)
 
 config = {
@@ -35,7 +36,7 @@ config = {
     'clients_per_round': args.clients_ratio,
     'num_rounds': args.round,
     'desired_accuracy': 0.99,
-    'model': lambda: Cnn1D(15),
+    'model': lambda: LogisticRegression(28 * 28, 10),
     'lr': args.learn_rate,
     'id': hashed_args,
 }
@@ -57,6 +58,7 @@ federated = FederatedLearning(
 FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
 federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'cached_results.db', config))
 federated.add_subscriber(Resumable(IODict(f'./cached_models.cs'), key=f'b{hashed_args}'))
+federated.add_subscriber(RoundAccuracy(plot_ratio=1, plot_title='Round Accuracy 1'))
 ClientSelectionCounter(save_dir=f'cls_{args.tag}_{hashed_args}.png').attach(federated)
 logger.info("----------------------")
 logger.info(f"start federated genetics")
