@@ -9,9 +9,8 @@
 #SBATCH --output=job_basic.out
 HOME=/home/ahmmmoud/projects/def-zdziong/ahmmmoud/arafeh/geneticfed
 
-
 module load python/3.6
 source ${HOME}/venv/bin/activate
 export PYTHONPATH="${PYTHONPATH}:${HOME}"
 
-cd results || python ../fedavg.py -e 25 -b 80000 -r 500 -cr 5 -lr 0.01 -t 'fedavg'
+cd results || python ../../mnist.py -e 1 -b 50 -r 200 -cr 10 -lr 0.01 -t 'mnist'
