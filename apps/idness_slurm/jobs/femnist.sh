@@ -13,4 +13,4 @@ module load python/3.6
 source ${HOME}/venv/bin/activate
 export PYTHONPATH="${PYTHONPATH}:${HOME}"
 
-cd results || python ../../femnist.py -e 50 -b 50 -r 300 -cr 10 -lr 0.001 -t 'femnist'
+python ../femnist.py -e 50 -b 50 -r 300 -cr 10 -lr 0.001 -t 'femnist'
