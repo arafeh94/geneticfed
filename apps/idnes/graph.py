@@ -6,36 +6,33 @@ graphs = Graphs(FedDB('results.db'))
 
 graphs.plot([
     {
-        'session_id': 'label_100c_10l_600mn_600mx',
-        'field': 'acc',
-        'config': {'color': 'b', 'label': "label_100c_10l_600mn_600mx {'iidness': 0}"},
+        'session_id': 't58349_87030_label_100c_10l_600mn_600mx',
+        'field': 'loss',
+        'config': {'color': 'b', 'label': "{'iidness': 6.969058559918826}"},
     },
     {
-        'session_id': 'label_100c_5l_300mn_300mx',
-        'field': 'acc',
-        'config': {'color': 'r', 'label': "label_100c_3l_600mn_600mx {'iidness': 8484.848484848484}"},
+        'session_id': 't67746_32382_label_100c_10l_600mn_600mx',
+        'field': 'loss',
+        'config': {'color': 'r', 'label': "{'iidness': 7.0495233045979955}"},
     },
     {
-        'session_id': 'label_100c_10l_10mn_600mx',
-        'field': 'acc',
-        'config': {'color': 'g', 'label': "label_100c_10l_10mn_600mx {'iidness': 270.7248484848485}"},
-    },
-    # {
-    #     'session_id': 'label_100c_3l_10mn_600mx',
-    #     'field': 'acc',
-    #     'config': {'color': 'yellow', 'label': "label_100c_3l_10mn_600mx {'iidness': 3345.8772424242425}"},
-    # },
-    {
-        'session_id': 'label_100c_1l_600mn_600mx',
-        'field': 'acc',
-        'config': {'color': 'cyan', 'label': "label_100c_1l_600mn_600mx {'iidness': 32727.272727272728}"},
+        'session_id': 't11211_94329_label_100c_10l_600mn_600mx',
+        'field': 'loss',
+        'config': {'color': 'g', 'label': "{'iidness': 6.353239890456613}"},
     },
     {
-        'session_id': 'label_100c_1l_10mn_600mx',
-        'field': 'acc',
-        'config': {'color': 'black', 'label': "label_100c_1l_10mn_600mx {'iidness': 10312.18997979798}"},
+        'session_id': 't33748_59449_label_100c_10l_600mn_600mx',
+        'field': 'loss',
+        'config': {'color': 'yellow', 'label': "{'iidness': 2.948609475064131}"},
     },
-], xlabel='Round', ylabel='Accuracy', plt_func=change)
-
-
-
+    {
+        'session_id': 't11374_36312_label_100c_10l_600mn_600mx',
+        'field': 'loss',
+        'config': {'color': 'cyan', 'label': "{'iidness': 3.6558652085402756}"},
+    },
+    {
+        'session_id': 't64910_22905_label_100c_10l_600mn_600mx',
+        'field': 'loss',
+        'config': {'color': 'black', 'label': "{'iidness': 1.756841220606432}"},
+    },
+], xlabel='Round', ylabel='Accuracy')
