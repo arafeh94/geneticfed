@@ -9,14 +9,12 @@ import os, psutil
 
 
 class BasePlotter(FederatedSubscriber):
-    def __init__(self, plot_ratio=1, show_plot=True, save_dir=None, plot_title=None):
+    def __init__(self, plot_ratio=1, show_plot=True, save_prefix=None, plot_title=None):
         super().__init__()
         self.plot_ratio = plot_ratio if plot_ratio else sys.maxsize
         self.show_plot = show_plot
-        self.save_dir = save_dir
+        self.save_prefix = save_prefix
         self.plot_title = plot_title
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
 
     def on_round_end(self, params):
         context = params['context']
@@ -32,8 +30,8 @@ class BasePlotter(FederatedSubscriber):
     def execute(self, plot, context):
         if not plot:
             return
-        if self.save_dir:
-            file_name = f'{self.save_dir}{os.path.sep}{self.save_file_name(context)}'
+        if self.save_prefix:
+            file_name = f'{self.save_prefix}_{self.save_file_name(context)}.png'
             plot.savefig(file_name)
         if self.show_plot:
             plot.show()

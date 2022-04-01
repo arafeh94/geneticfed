@@ -77,8 +77,8 @@ for distributor in distributors:
     FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]).attach(federated)
     federated.add_subscriber(SQLiteLogger(str(calendar.timegm(time.gmtime())), f'cached_results.db', config))
     federated.add_subscriber(Resumable(IODict(f'./cached_models.cs'), key=f'b{prefix}_{hashed_args}'))
-    save_dir = f'./{prefix}_{idn}_{hashed_args}_acc.png'
-    federated.add_subscriber(RoundAccuracy(plot_ratio=0, plot_title='Round Accuracy 1', save_dir=save_dir))
+    save_dir = f'./{prefix}_{idn}_{hashed_args}_'
+    federated.add_subscriber(RoundAccuracy(plot_ratio=0, plot_title='Round Accuracy 1', save_prefix=save_dir))
     ClientSelectionCounter(save_dir=f'cls_{prefix}_{args.tag}_{hashed_args}.png').attach(federated)
     logger.info("----------------------")
     logger.info(f"start federated genetics")
