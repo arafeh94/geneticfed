@@ -55,7 +55,8 @@ for distributor in distributors:
         'model': lambda: LogisticRegression(28 * 28, 10),
         'lr': args.learn_rate,
         'id': hashed_args,
-        'idn': idn
+        'idn': idn,
+        'title': 'mnist',
     }
 
     trainer_manager = SeqTrainerManager()

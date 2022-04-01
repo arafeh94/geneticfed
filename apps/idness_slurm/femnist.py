@@ -56,7 +56,8 @@ for distributor in distributors:
         'model': lambda: CNN_OriginalFedAvg(False),
         'lr': args.learn_rate,
         'id': hashed_args,
-        'idn': idn
+        'idn': idn,
+        'title': 'femnist',
     }
 
     trainer_manager = SeqTrainerManager()

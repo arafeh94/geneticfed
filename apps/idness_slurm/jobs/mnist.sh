@@ -13,4 +13,4 @@ module load python/3.6
 source ${HOME}/venv/bin/activate
 export PYTHONPATH="${PYTHONPATH}:${HOME}"
 
-python ../mnist.py -e 1 -b 50 -r 200 -cr 10 -lr 0.01 -t 'mnist'
+python ../mnist.py -e 1 -b 50 -r 300 -cr 10 -lr 0.01 -t 'mnist'

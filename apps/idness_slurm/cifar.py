@@ -57,7 +57,8 @@ for distributor in distributors:
         'model': lambda: Cifar10Model(),
         'lr': args.learn_rate,
         'id': hashed_args,
-        'idn': idn
+        'idn': idn,
+        'title': 'cifar',
     }
 
     trainer_manager = SeqTrainerManager()
