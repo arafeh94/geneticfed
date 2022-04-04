@@ -30,12 +30,12 @@ log_file = f'{args.tag}_{hashed_args}.log'
 utils.enable_logging(None)
 logger = logging.getLogger('main')
 distributors = [
-    IidDistributor(100, 100, 600, 600, is_random_label_size=True),
-    IidDistributor(100, 100, 600, 600, is_random_label_size=True),
-    IidDistributor(100, 100, 600, 600, is_random_label_size=True),
-    IidDistributor(100, 100, 600, 600, is_random_label_size=True),
-    IidDistributor(100, 100, 600, 600, is_random_label_size=True),
-    IidDistributor(100, 100, 600, 600, is_random_label_size=True),
+    IidDistributor(20, 100, 3000, 3000, is_random_label_size=True),
+    IidDistributor(20, 100, 3000, 3000, is_random_label_size=True),
+    IidDistributor(20, 100, 3000, 3000, is_random_label_size=True),
+    IidDistributor(20, 100, 3000, 3000, is_random_label_size=True),
+    IidDistributor(20, 100, 3000, 3000, is_random_label_size=True),
+    IidDistributor(20, 100, 3000, 3000, is_random_label_size=True),
 ]
 
 for distributor in distributors:
