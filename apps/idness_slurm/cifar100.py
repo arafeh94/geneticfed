@@ -7,27 +7,23 @@ from os.path import dirname
 import os
 
 from apps.idnes.IidDistributor import IidDistributor
-from libs.model.cv.cnn import Cifar10Model
-from libs.model.linear.lr import LogisticRegression
+from libs.model.cv.resnet import resnet56
 from src.apis import lambdas, utils
 from src.apis.rw import IODict
-from src.data.data_distributor import LabelDistributor
 from src.data.data_tools import iidness
-from src.federated.subscribers.analysis import ClientSelectionCounter
-from src.federated.subscribers.fed_plots import RoundAccuracy
 from src.federated.subscribers.resumable import Resumable
 from apps.paper_jobs import context
 from src.data.data_loader import preload
 from src.federated.components import aggregators, metrics, client_selectors
 from src.federated.components.trainer_manager import SeqTrainerManager
-from src.federated.components.trainers import TorchTrainer, CPUTrainer
+from src.federated.components.trainers import TorchTrainer
 from src.federated.events import Events
 from src.federated.federated import FederatedLearning
 from src.federated.protocols import TrainerParams
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
 
-args = context.args(1, 25, 2, 10, 0.01)
+args = context.args()
 hashed_args = context.hashed(args)
 
 log_file = f'{args.tag}_{hashed_args}.log'
@@ -43,9 +39,8 @@ distributors = [
 ]
 
 for distributor in distributors:
-    client_data = distributor.distribute(preload('cifar10'))
-    client_data = client_data.map(lambdas.reshape((-1, 32, 32, 3))).map(lambdas.transpose((0, 3, 1, 2)))
-    idn = iidness(client_data.map(lambdas.as_list), 10)
+    client_data = distributor.distribute(preload('cifar100'))
+    idn = iidness(client_data.map(lambdas.as_list), 100)
     logger.info(idn)
     logger.info(client_data)
     prefix = f'{random.randint(0, 99999)}_{random.randint(0, 99999)}'
@@ -55,17 +50,16 @@ for distributor in distributors:
         'clients_per_round': args.clients_ratio,
         'num_rounds': args.round,
         'desired_accuracy': 0.99,
-        'model': lambda: Cifar10Model(),
+        'model': lambda: resnet56(100, 3, 32),
         'lr': args.learn_rate,
         'id': hashed_args,
         'idn': idn,
-        'title': 'cifar',
+        'title': 'cifar100',
     }
 
     trainer_manager = SeqTrainerManager()
     trainer_params = TrainerParams(trainer_class=TorchTrainer, optimizer='sgd', epochs=config['epochs'],
-                                   batch_size=config['batch_size'],
-                                   criterion='cel', lr=config['lr'])
+                                   batch_size=config['batch_size'], criterion='cel', lr=config['lr'])
     federated = FederatedLearning(
         trainer_manager=trainer_manager,
         trainer_config=trainer_params,

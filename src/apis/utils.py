@@ -95,5 +95,8 @@ def timed_func(seconds, callable: typing.Callable):
         callable()
 
 
-def enable_logging(level=logging.INFO):
-    logging.basicConfig(level=logging.INFO)
+def enable_logging(file_name=None, level=logging.INFO):
+    if file_name:
+        logging.basicConfig(filename=file_name, filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.INFO)

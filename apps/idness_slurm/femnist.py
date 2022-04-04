@@ -6,10 +6,14 @@ import time
 from os.path import dirname
 import os
 
+import torch
+from matplotlib import pyplot as plt
+from matplotlib.pyplot import imshow
+
 from apps.idnes.IidDistributor import IidDistributor
-from libs.model.cv.cnn import CNN_OriginalFedAvg
+from libs.model.cv.cnn import CNN_OriginalFedAvg, CNN32
 from libs.model.linear.lr import LogisticRegression
-from src.apis import lambdas
+from src.apis import lambdas, utils
 from src.apis.rw import IODict
 from src.data.data_distributor import LabelDistributor
 from src.data.data_tools import iidness
@@ -27,10 +31,11 @@ from src.federated.protocols import TrainerParams
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
 
-args = context.args()
+args = context.args(25, 50, 100, 10, 0.01, 'fe')
 hashed_args = context.hashed(args)
 
-logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
+# logging.basicConfig(filename=f'{args.tag}_{hashed_args}.log', filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
+utils.enable_logging()
 logger = logging.getLogger('main')
 distributors = [
     IidDistributor(100, 62, 600, 600, is_random_label_size=True),
@@ -42,7 +47,10 @@ distributors = [
 ]
 
 for distributor in distributors:
-    client_data = distributor.distribute(preload('femnist'))
+    client_data = preload('femnist', distributor)
+    client_data = client_data.map(lambdas.reshape((-1, 28, 28))).map(lambdas.as_tensor)
+    plt.imshow(client_data[0].x[0])
+    plt.show()
     idn = iidness(client_data.map(lambdas.as_list), 62)
     logger.info(idn)
     logger.info(client_data)
@@ -53,7 +61,7 @@ for distributor in distributors:
         'clients_per_round': args.clients_ratio,
         'num_rounds': args.round,
         'desired_accuracy': 0.99,
-        'model': lambda: CNN_OriginalFedAvg(False),
+        'model': lambda: CNN32(1, 62),
         'lr': args.learn_rate,
         'id': hashed_args,
         'idn': idn,

@@ -1,7 +1,7 @@
 from src.apis.rw import IODict
 
 cached_files = [
-    '../../cached_models.cs'
+    'cached_models.cs'
 ]
 
 for file in cached_files:
