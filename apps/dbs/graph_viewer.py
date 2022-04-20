@@ -26,6 +26,8 @@ def variance(data, each=30):
 
 graphs = Graphs(FedDB('../experiments/perf.db'))
 print(graphs)
+plt.rcParams.update({'font.size': 22})
+plt.grid()
 graphs.plot([
     {
         'session_id': 'cifar',

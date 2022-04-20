@@ -3,15 +3,13 @@ from matplotlib import pyplot as plt
 from numpy import ndarray
 
 
-def heatmap(matrix: Union[List[List], ndarray], title="", xlabel="", file_path=None):
+def heatmap(matrix: Union[List[List], ndarray], title="", xlabel="", file_path=None, fill=True):
     fig, ax = plt.subplots()
     ax.imshow(matrix)
-    # ax.set_xticks(np.arange(len(matrix[0])))
-    # ax.set_yticks(np.arange(len(matrix)))
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     for i in range(len(matrix)):
         for j in range(len(matrix[0])):
-            ax.text(j, i, '', ha="center", va="center", color="w")
+            ax.text(j, i, int(matrix[i][j]) if fill else '', ha="center", va="center", color="black")
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     fig.tight_layout()
