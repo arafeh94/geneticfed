@@ -1,13 +1,14 @@
 import os
+import psutil
 import sys
 from abc import abstractmethod
+
 from matplotlib import pyplot as plt
 from scipy.stats import wasserstein_distance
 
 from src.apis import utils
 from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
-import os, psutil
 
 
 class BasePlotter(FederatedSubscriber):
@@ -92,6 +93,15 @@ class LocalLoss(BasePlotter):
 
     def final_plot(self, params):
         return None
+
+
+class FinalAccuracyPlot(RoundAccuracy):
+
+    def __init__(self):
+        super().__init__(0, True, None, 'Final Acc')
+
+    def final_plot(self, params):
+        return super().round_plot(params)
 
 
 class RoundLoss(BasePlotter):

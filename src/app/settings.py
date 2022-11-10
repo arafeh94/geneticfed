@@ -62,7 +62,9 @@ class Settings:
             config = [config]
         return config
 
-    def get(self, key, absent_ok=True) -> typing.Any:
+    def get(self, key, force_args=None, absent_ok=True) -> typing.Any:
+        if force_args and key in force_args:
+            return force_args[key]
         try:
             val = self._extract(key)
             return self._create(val)
@@ -119,4 +121,9 @@ class Settings:
     @staticmethod
     def from_json_file(file_path):
         configs = json.load(open(file_path, 'r'))
+        return Settings(configs)
+
+    @staticmethod
+    def from_json(file_path):
+        configs = json.loads(file_path)
         return Settings(configs)

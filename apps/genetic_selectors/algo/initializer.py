@@ -21,10 +21,11 @@ def ga_module_creator(clients_data, init_model, max_iter=20, r_cross=0.1, r_mut=
     return lambda: global_model
 
 
-def cluster_module_creator(clients_data, init_model, clusters=10, c_size=1):
-    context = Context(clients_data, init_model)
-    context.train(data_ratio=0.1)
-    clustered = ClusterSelector(context.cluster(clusters))
+def cluster_module_creator(clients_data, init_model, clusters=10, c_size=1, epochs=100, batch=50, lr=0.1,
+                           saved_model_path='./kcenter'):
+    context = Context(clients_data, init_model, saved_model_path=saved_model_path)
+    context.train(data_ratio=0.6, epochs=epochs, batch=batch, lr=lr)
+    clustered = ClusterSelector(context.cluster(clusters, compress=False))
     selected_idx = []
     while len(selected_idx) < c_size:
         available = clustered.list()

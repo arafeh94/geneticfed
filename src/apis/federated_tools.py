@@ -43,6 +43,8 @@ def aggregate(models_dict: dict, sample_dict: dict):
     training_num = 0
 
     for idx in models_dict.keys():
+        if idx not in sample_dict:
+            sample_dict[idx] = 1
         model_list.append((sample_dict[idx], copy.deepcopy(models_dict[idx])))
         training_num += sample_dict[idx]
 
@@ -58,6 +60,7 @@ def aggregate(models_dict: dict, sample_dict: dict):
                 averaged_params[k] += local_model_params[k] * w
 
     return averaged_params
+
 
 def infer(model, test_data, transformer=None):
     model.eval()

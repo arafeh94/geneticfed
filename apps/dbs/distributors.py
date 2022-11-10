@@ -1,4 +1,47 @@
-from src.data.data_distributor import LabelDistributor, DirichletDistributor, ShardDistributor, UniqueDistributor
+from src.data.data_distributor import LabelDistributor, DirichletDistributor, ShardDistributor, UniqueDistributor, \
+    PipeDistributor
+
+
+def pipe(size):
+    pipes = [
+        PipeDistributor.pick_by_label_id([1, 2], 250, 5),
+        PipeDistributor.pick_by_label_id([1, 2], 50, 10),
+        PipeDistributor.pick_by_label_id([1, 2], 5, 10),
+        PipeDistributor.pick_by_label_id([3, 4], 250, 5),
+        PipeDistributor.pick_by_label_id([3, 4], 50, 10),
+        PipeDistributor.pick_by_label_id([3, 4], 5, 10),
+        PipeDistributor.pick_by_label_id([5, 6], 250, 5),
+        PipeDistributor.pick_by_label_id([5, 6], 50, 10),
+        PipeDistributor.pick_by_label_id([5, 6], 5, 10),
+        PipeDistributor.pick_by_label_id([7, 8], 250, 5),
+        PipeDistributor.pick_by_label_id([7, 8], 50, 10),
+        PipeDistributor.pick_by_label_id([7, 8], 5, 10),
+        PipeDistributor.pick_by_label_id([9, 0], 250, 5),
+        PipeDistributor.pick_by_label_id([9, 0], 50, 10),
+        PipeDistributor.pick_by_label_id([9, 0], 5, 10),
+    ]
+    return PipeDistributor(pipes)
+
+
+def pipe2(size):
+    pipes = [
+        PipeDistributor.pick_by_label_id([1, 2], 250, 10),
+        PipeDistributor.pick_by_label_id([1, 2], 50, 5),
+        PipeDistributor.pick_by_label_id([1, 2], 5, 5),
+        PipeDistributor.pick_by_label_id([3, 4], 250, 10),
+        PipeDistributor.pick_by_label_id([3, 4], 50, 5),
+        PipeDistributor.pick_by_label_id([3, 4], 5, 5),
+        PipeDistributor.pick_by_label_id([5, 6], 250, 10),
+        PipeDistributor.pick_by_label_id([5, 6], 50, 5),
+        PipeDistributor.pick_by_label_id([5, 6], 5, 5),
+        PipeDistributor.pick_by_label_id([7, 8], 250, 10),
+        PipeDistributor.pick_by_label_id([7, 8], 50, 5),
+        PipeDistributor.pick_by_label_id([7, 8], 5, 5),
+        PipeDistributor.pick_by_label_id([9, 0], 250, 10),
+        PipeDistributor.pick_by_label_id([9, 0], 50, 5),
+        PipeDistributor.pick_by_label_id([9, 0], 5, 5),
+    ]
+    return PipeDistributor(pipes)
 
 
 def load(args):
@@ -23,4 +66,6 @@ def load(args):
         'mnist_shards_2': ShardDistributor(300, int(2)),
         'mnist_shards_5': ShardDistributor(300, int(5)),
         'mnist_unique': UniqueDistributor(10, 3000, 3000),
+        'pipe': pipe(10),
+        'pipe2': pipe2(10)
     }

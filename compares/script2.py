@@ -9,15 +9,15 @@ from src import manifest
 # path = manifest.COMPARE_PATH + './cifar_all.pkl'
 # accss = fl.AccuracyCompare(path)
 #
-cluster = fl.AccuracyCompare(manifest.COMPARE_PATH + './faircluster/acc.pkl')
+# cluster = fl.AccuracyCompare(manifest.COMPARE_PATH + './faircluster/acc.pkl')
 # accss = fl.AccuracyCompare(manifest.COMPARE_PATH + './cifar_all.pkl')
-accss = fl.AccuracyCompare(manifest.COMPARE_PATH + './acc.pkl')
+accss = fl.AccuracyCompare(manifest.COMPARE_PATH + './mnist/acc.pkl')
 
 print(accss.get_saved_accuracy().keys())
-print(cluster.get_saved_accuracy().keys())
+# print(cluster.get_saved_accuracy().keys())
 
-plt.rcParams.update({'font.size': 28})
-plt.grid()
+plt.rcParams.update({'font.size': 16})
+# plt.grid()
 plt.legend(loc='best')
 
 
@@ -63,11 +63,11 @@ filts = [
     #     lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's4', 'warmup', ),
     # ],
     # # 1,2
-    [
-        lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's10', 'cr01', 'basic', ),
-        lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's10', 'cr01', 'genetic', ),
-        lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's10', 'cr01', 'warmup', ),
-    ],
+    # [
+    #     lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's10', 'cr01', 'basic', ),
+    #     lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's10', 'cr01', 'genetic', ),
+    #     lambda item: contains(item, 'lr0.1', 'e25', 'r500', 's10', 'cr01', 'warmup', ),
+    # ],
     # [
     #     lambda item: contains(item, 'cifar', 's2'),
     # ],
@@ -90,6 +90,10 @@ filts = [
     # [
     #     lambda item: contains(item, 'cifar', 's10'),
     # ]
+    [
+        lambda item: contains(item, 'cluster', 'mnist', 'e1', 's2', 'r100', 'cr10', 'b50'),
+        lambda item: contains(item, 'genetic', 'mnist', 'e1', 's2', 'r100', 'cr10', 'b50'),
+    ]
 ]
 
 for ft in filts:
