@@ -21,7 +21,7 @@ RUN apt-get install -y software-properties-common gcc && \
 RUN apt-get update
 
 RUN apt-get update && apt-get install -y python3.9 python3-distutils \
-    python3-pip python3-apt git wget
+    python3-pip python3-apt git wget vim nano
 
 RUN apt-get install -y --no-install-recommends openssh-server \
     gfortran libopenmpi-dev openmpi-bin openmpi-common openmpi-doc binutils
@@ -71,6 +71,7 @@ RUN  pip3 install --user -U setuptools \
 # Add localfed  lib
 # ------------------------------------------------------------
 ENV FedLib=${HOME}/localfed
+ENV PYTHONPATH "${PYTHONPATH}:${FedLib}"
 
 ADD . ${FedLib}
 
@@ -85,6 +86,7 @@ USER root
 RUN rm -fr ${HOME}/.openmpi && mkdir -p ${HOME}/.openmpi
 ADD  utilities/mpi/default-mca-params.conf ${HOME}/.openmpi/mca-params.conf
 RUN chown -R ${USER}:${USER} ${HOME}/.openmpi
+RUN chown -R ${USER}:${USER} ${FedLib}
 
 
 # ------------------------------------------------------------
