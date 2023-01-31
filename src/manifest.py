@@ -3,12 +3,8 @@ from collections import namedtuple
 from pathlib import Path
 
 ROOT_PATH = str(Path(__file__).parent.parent)
-DATA_PATH = ROOT_PATH + "/datasets/pickles/"
-COMPARE_PATH = ROOT_PATH + "/compares/"
+DATA_PATH = "D:/Datasets"
 CHECKPOINTS_PATH = f'{ROOT_PATH}/checkpoints.fed'
-DEFAULT_ACC_PATH = COMPARE_PATH + "acc.pkl"
-DEFAULT_DIV_PATH = COMPARE_PATH + "div.pkl"
-DB_PATH = COMPARE_PATH + "perf.db"
 
 wandb_config = {
     'key': '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc',
