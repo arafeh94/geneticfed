@@ -1,12 +1,12 @@
 # localfed - A Federated Learning Framework
 
-This library is influenced by FedML. localfed is a federated learning framework that allows researcher to easily build
-their ideas and run them in a federated learning context. <br>
+localfed is a federated learning framework that allows researchers to easily build
+their theories and run them in a federated learning context. <br>
 
-Different from others, localfed consider federated learning as a composition of different components that should be
+Different from others, localfed considers federated learning as a composition of different components that should be
 replaced on the spot without many changes.
 
-Example running federated learning task
+An example of running a federated learning task
 
 ```
 federated = FederatedLearning(params)
@@ -19,19 +19,19 @@ This code will start a federated learning application with the given parameters 
 
 ## Federated Parameters
 
-FederatedLearning class requires different parameters to control its behavior. Of these parameters we can list
+FederatedLearning class requires different parameters to control its behaviour. Of these parameters, we can list
 
 ### trainer_manager:
 
-Instance of TrainerManager interface defines how trainers are running. TrainerManager is followed by TrainerParams as
-which define the training parameters of each client, such as epochs, loss, and so on. It exists for now two builtin
-trainer managers:
+An instance of the TrainerManager interface defines how trainers are running. TrainerManager is followed by
+TrainerParams, which define the clients' training parameters, such as epochs, loss, and so on. It exists, for now, three
+builtin trainer managers:
 
 - SeqTrainerManager that runs trainers sequentially on a single thread
-- MPITrainerManager that runs trainers on a different instance, so it would be possible to run multiple trainers at the
-  same time. using this manager would also allow us to control the behavior of the trainers, in terms of allocated
-  resources for their runs since they are running on different process. such control is given because we're using mpi to
-  complete this task. Refer to MPI Section to see examples.
+- MPITrainerManager runs trainers on a different instance, so it would be possible to run multiple trainers
+  simultaneously. Using this manager would also allow us to control the trainers' behaviour regarding allocated
+  resources for their runs since they run on different processes (or different devices). Such control is given because
+  we are using MPI to complete this task. Refer to MPI Section to see examples.
 
 ```python
 trainer_manager = SeqTrainerManager()
@@ -41,8 +41,9 @@ trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=5
 
 ### aggregator:
 
-Instance of Aggregator interface define how the collected models are merged into one global model. AVGAggregator is the
-widely used aggregator that takes the average of the models weights to generate the global model
+An instance of an Aggregator interface defines how the collected models are merged into one global model. AVGAggregator
+is the
+widely used aggregator that takes the average of the models' weights to generate the global model
 
 ```python
 aggregator = aggregators.AVGAggregator()
@@ -50,10 +51,11 @@ aggregator = aggregators.AVGAggregator()
 
 ### client_selector
 
-Instance of a ClientSelector interface controls the selected clients to train in each round. Available client selectors:
+An instance of a ClientSelector interface controls the selected clients to train in each round. Available client
+selectors:
 
-- Random(nb): select [nb] number of client randomly to train in each round
-- All(): select all the client to train in each round
+- Random(nb): select [nb] a number of clients randomly to train in each round
+- All(): select all the clients to train in each round
 
 ```python
 # select 40% of the clients to train a model each round
@@ -68,7 +70,7 @@ client_selector = client_selectors.All()
 
 ### metrics
 
-Instance of ModelInfer used to test the model accuracy on test data after each round. Available metrics:
+An instance of ModelInfer is used to test the model accuracy on test data after each round. Available metrics:
 
 - AccLoss(batch_size,criterion): test the model and returns accuracy and loss
 
@@ -78,32 +80,30 @@ acc_loss_metric = metrics.AccLoss(batch_size=8, criterion=nn.CrossEntropyLoss())
 
 ### trainers_data_dict
 
-A dictionary of <b>[client_id:int,DataContainer]</b> that define each client what data they have. DataContainer is class
-that controls holds x,y which are the features and labels. Example:
+A dictionary of <b>[client_id:int,DataContainer]</b> that defines each client what data they have. DataContainer is a
+class that holds (x,y), the features and labels. Example:
 
 ```python
 from src.data.data_container import DataContainer
 
-# clients in this dataset have 3 records each have 3 features. 
-# A record is labels 1 when all the features have the same value and 0 otherwise
+# clients in this dataset have 3 records, each having three features. 
+# A record is labelled 1 when all the features have the same value and 0 otherwise
 # A sample of data
 client_data = {
-    0: DataContainer([
-        [1, 1, 1],
-        [2, 2, 3],
-        [2, 1, 2]
-    ], [1, 0, 0]),
-    1: DataContainer([
-        [1, 2, 1],
-        [2, 2, 2],
-        [2, 2, 2]
-    ], [0, 1, 1])
+    0: DataContainer(x=[[1, 1, 1],
+                        [2, 2, 3],
+                        [2, 1, 2]],
+                     y=[1, 0, 0]),
+    1: DataContainer(x=[[1, 2, 1],
+                        [2, 2, 2],
+                        [2, 2, 2]],
+                     y=[0, 1, 1])
 }
 ```
 
-Usually we don't test model on manually created data. This example is only to know the structure of the input.
-DataContainer contains some useful methods used inside federated learning class. However, to create a meaningful data
-you can refer to data loader section.
+Usually, we only test the model on manually created data. This example is only to know the structure of the input.
+DataContainer contains some valuable methods used inside federated learning classes. However,
+you can refer to the data loader section to create meaningful data.
 
 ### initial_model
 
@@ -125,21 +125,22 @@ initial_model = create_model
 
 ### num_rounds
 
-For how many number of rounds the federated learning task should run. 0 used for unlimited
+For how many rounds the federated learning task should run? 0 used for unlimited
 
 ### desired_accuracy
 
-Desired accuracy where federated learning should stop when it is reached
+Desired accuracy defines the accuracy of which federated learning should stop when it is reached
 
 ### train_ratio
 
-FederatedLearning instance split the data into train and test when it initializes. train_ratio value decide where we
+FederatedLearning instance splits the data into train and test when it initializes. train_ratio value decides where we
 should split the data. For example, for a train_ratio=0.8, that means train data should be 80% and test data should 20%
 for each client data.
 
 ### test_data
 
-An optional parameter used for cases when the dataset have already specific test data to test the model accuracy.
+An optional parameter used for cases when the dataset have already specific test data to test the model accuracy.<br>
+Otherwise, federated learning class will internally split the given data to train, test sets
 
 ```python
 test_data = DataContainer(...)
@@ -186,7 +187,7 @@ To solve this issue we create a data managers that can help to generate data bas
 capable of saving the distributed data and load it for the next run avoiding the long loading time due to distributing
 data to clients.
 
-### Example
+### example
 
 ```python
 # label distributor distribute data to clients based on how many labels is client should have. 
@@ -205,7 +206,7 @@ soon...
 
 ## Federated Plugins
 
-Many additional task might be required when running a federated learning application. For example:
+Many additional task might be required when running a federated learning application. For Example:
 
 - plot the accuracy after each round
 - plot the local accuracy of each client
@@ -241,50 +242,60 @@ For more example, refer to apps/experiments
 <u><b>Important Examples:</b></u>
 
 <b>Simple example:</b> apps/experiments/federated_averaging.py<br>
-<b>Description:</b> FederatedLearning using mnist dataset distributed to 100 clients with 600 records each.
+<b>Description:</b> FederatedLearning using MNIST dataset distributed to 100 clients with 600 records each.
 
 <b>Distributed example:</b> apps/experiments/distributed_averaging.py<br>
-<b>Description:</b> same as simple example but using MPI for parallel training.Using MPI requires an additional software
+<b>Description:</b> same as a sample example but using MPI for parallel training. Using MPI requires additional software
 on the host. Please refer to MPI documentation for additional information. You may find the command required to run the
-script at the top of the script
+script at the top of the script.
 
 ```bash
-# run 11 instance of the script the first one will be considered the server while the rest 10 will be considered 
-# as clients, make sure client selector select 10 clients each round to benefits from all instances
+# run 11 instances of the script. The first one will be considered the server, while the rest ten will be considered 
+# as clients. Make sure the client selector selects ten clients each round to benefit from all instances
 mpiexec -n 11 python distributed_averaging.py
 ```
 
-
 ## Docker Containers
-Enable parallel distributed training through docker containers. 
+
+Enable parallel distributed training through docker containers.
 
 ### Build
+Using a clone docker file (have always the latest updates)
 ```bash
-docker build -t mpi .
+docker build -t arafeh94/localfed .
 ```
 
-### Create one container for server and two for clients
+Using a preloaded docker hub image (updated occasionally or after major changes)
 ```bash
-docker run -d --name head -p 20:20 mpi
-docker run -d --name node1 mpi
-docker run -d --name node2 mpi
+docker pull arafeh94/localfed
 ```
 
-### Check containers IP
+### Create one container for the server and two for the clients
+
 ```bash
-docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
+docker run -d --name head -p 20:20 arafeh94/localfed
+docker run -d --name node1 arafeh94/localfed
+docker run -d --name node2 arafeh94/localfed
+```
+
+### Check containers' IP
+
+```bash
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' head
 ```
 
 ### Connect to a node
+
 ```bash
 docker exec -it -u mpirun head /bin/bash
 ```
 
-###  Check if all is working
+### Check if all is working
+
 ```bash
 # check if SSH connection is established and working correctly
 ssh 172.17.0.3 hostname
-# should return the docker container host name
+# should return the docker container hostname
 cd ~
 # check if MPI can initialize without issues
 mpirun -np 3 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/check.py
@@ -295,9 +306,10 @@ mpirun -np 3 --host localhost,172.17.0.3 python3 ${HOME}/mpi4py_benchmarks/com.p
 # nothing appear => everything is working
 ```
 
-
 ### Run distributed federated learning
+
 ```bash
 docker exec -it -u mpirun head /bin/bash
-mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 ${HOME}/localfed/apps/experiments/distributed_averaging.py
+cd ${HOME}/localfed/apps/experiments/
+mpirun -np 3 --host localhost,172.17.0.3,172.17.0.4 python3 distributed_averaging.py
 ```
