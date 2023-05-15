@@ -57,7 +57,7 @@ federated = FederatedLearning(
 federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
 federated.add_subscriber(EMDWeightDivergence(show_plot=False))
-federated.add_subscriber(SQLiteLogger(id='cifar', db_path='perf.db', tag='cifar10'))
+federated.add_subscriber(SQLiteLogger(id='cifar', db_path='./perf.db'))
 federated.add_subscriber(Resumable(IODict('./cache.cs')))
 logger.info("----------------------")
 logger.info("start federated 1")

@@ -58,4 +58,3 @@ logger.info("start federated 1")
 logger.info("----------------------")
 federated.start()
 
-files.accuracies.save_accuracy(federated, tag)

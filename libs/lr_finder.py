@@ -161,7 +161,7 @@ class LRFinder(object):
         self.memory_cache = memory_cache
         self.cache_dir = cache_dir
 
-        # Save the original state of the model and optimizer so they can be restored if
+        # Save the normal.py state of the model and optimizer so they can be restored if
         # needed
         self.model_device = next(self.model.parameters()).device
         self.state_cacher = StateCacher(memory_cache, cache_dir=cache_dir)

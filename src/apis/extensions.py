@@ -224,12 +224,16 @@ class TorchModel:
     def infer(self, batched, **kwargs):
         verbose = kwargs.get('verbose', 1)
         model = self.model
+        device = kwargs['device'] if 'device' in kwargs else ('cuda' if torch.cuda.is_available() else 'cpu')
+        model.to(device)
         model.eval()
         test_loss = test_acc = test_total = 0.
         criterion = nn.CrossEntropyLoss()
         with torch.no_grad():
             iterator = tqdm.tqdm(enumerate(batched), 'inferring') if verbose else enumerate(batched)
             for batch_idx, (x, target) in iterator:
+                x = x.to(device)
+                target = target.to(device)
                 pred = model(x)
                 loss = criterion(pred, target)
                 _, predicted = torch.max(pred, -1)

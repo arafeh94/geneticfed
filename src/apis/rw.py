@@ -8,10 +8,11 @@ class IODict(Serializable):
         super().__init__(file_path)
         self.cached = {}
 
-    def get(self, key, default: None):
-        if key in self.cached:
-            return self.cached[key]
-        return default
+    def __getitem__(self, item):
+        return self.read(item, None)
+
+    def __setitem__(self, key, value):
+        return self.write(key, value)
 
     def all(self, *keys):
         ret = {}

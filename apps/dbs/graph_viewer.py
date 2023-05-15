@@ -24,27 +24,15 @@ def variance(data, each=30):
     return normalize(results)
 
 
-graphs = Graphs(FedDB('../experiments/perf.db'))
+graphs = Graphs(FedDB('res.db'))
 print(graphs)
 plt.rcParams.update({'font.size': 22})
 plt.grid()
 graphs.plot([
     {
-        'session_id': 'cifar',
+        'session_id': 'iid',
         'field': 'acc',
-        'config': {'color': 'b'},
-        'transform': utils.smooth
+        'config': {'color': 'r'}
     },
-    {
-        'session_id': 'cifar',
-        'field': 'wd',
-        'config': {'color': 'r'},
-        'transform': normalize
-    },
-    {
-        'session_id': 'cifar',
-        'field': 'wd',
-        'config': {'color': 'g'},
-        'transform': variance
-    },
-], animated=True)
+
+])

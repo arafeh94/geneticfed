@@ -16,8 +16,9 @@ class FedDB:
     def session_id(self, **tags):
         tables = self.get('session', '*')
 
-    def get(self, table_name, field):
-        query = f'select {field} from {table_name}'
+    def get(self, table_name, field, where=''):
+        where = where or ''
+        query = f'select {field} from {table_name} {where}'
         records = self.execute(query)
         values = list(map(lambda x: x[0], records))
         return values

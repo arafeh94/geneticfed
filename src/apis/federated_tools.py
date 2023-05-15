@@ -62,6 +62,14 @@ def aggregate(models_dict: dict, sample_dict: dict):
     return averaged_params
 
 
+def asyncgregate(current_weights, staled_weights, staleness):
+    alpha = 1. / (1 + staleness)
+
+    for name, param in current_weights.items():
+        current_weights[name] = ((1 - alpha) * current_weights[name]) + (alpha * staled_weights[name])
+    return current_weights
+
+
 def infer(model, test_data, transformer=None):
     model.eval()
     test_loss = test_acc = test_total = 0.

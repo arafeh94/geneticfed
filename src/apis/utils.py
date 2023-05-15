@@ -1,12 +1,14 @@
 import hashlib
 import logging
+import os
 import typing
 from datetime import datetime, timedelta
 from functools import reduce
 import numpy as np
 import torch
+from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn import decomposition
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering
 
 from src.apis.extensions import Dict
 
@@ -45,6 +47,12 @@ def fed_avg(runs: typing.List['FederatedLearning.Context']):
     return avg_acc, avg_loss
 
 
+def validate_path(file_path):
+    parent_dir = os.path.dirname(file_path)
+    if len(parent_dir) and not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
+
+
 def cluster(client_weights: Dict, cluster_size=10, compress_weights=True):
     logger.info("Clustering Models --Started")
     weights = []
@@ -57,6 +65,24 @@ def cluster(client_weights: Dict, cluster_size=10, compress_weights=True):
     kmeans: KMeans = KMeans(n_clusters=cluster_size).fit(weights)
     logger.info(kmeans.labels_)
     for i, label in enumerate(kmeans.labels_):
+        clustered[client_ids[i]] = label
+    logger.info("Clustering Models --Finished")
+    return clustered
+
+
+def hc_clustering(clients_weights, n_cluster, compress_weights=False):
+    logger.info("Clustering Models --Started")
+    weights = []
+    client_ids = []
+    clustered = {}
+    for client_id, stats in clients_weights.items():
+        client_ids.append(client_id)
+        weights.append(compress(flatten_weights(stats), 4)
+                       if compress_weights else flatten_weights(stats))
+    hierarchical_cluster = AgglomerativeClustering(n_clusters=n_cluster, affinity='euclidean', linkage='ward')
+    hc_results = hierarchical_cluster.fit(weights)
+    logger.info(hc_results.labels_)
+    for i, label in enumerate(hc_results.labels_):
         clustered[client_ids[i]] = label
     logger.info("Clustering Models --Finished")
     return clustered

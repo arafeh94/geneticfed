@@ -21,8 +21,8 @@ from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
 from src.federated.components.trainer_manager import SeqTrainerManager
 from src.federated.subscribers.analysis import ClientSelectionCounter
-from apps.genetic_selectors_v2.algo import initializer
-from apps.genetic_selectors_v2.algo.selector import GeneticSelector
+from apps.genetics.src import initializer
+from apps.genetics.src.selector import GeneticSelector
 
 args = context.args()
 hashed_args = context.hashed(args)

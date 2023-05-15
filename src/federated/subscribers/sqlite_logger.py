@@ -6,33 +6,32 @@ from pathlib import Path
 from sqlite3 import OperationalError
 
 from src import manifest
+from src.apis import utils
 from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 
 
 # noinspection SqlNoDataSourceInspection
 class SQLiteLogger(FederatedSubscriber):
-    def __init__(self, id, db_path=manifest.DB_PATH, config=''):
+    def __init__(self, id, db_path, config=''):
         super().__init__()
         self.id = id
+        utils.validate_path(db_path)
         self.con = sqlite3.connect(db_path, timeout=1000)
-        self.check_table_creation = True
+        self.initialized = False
         self._logger = logging.getLogger('sqlite')
         self.tag = str(config)
         self._check_table_name()
+        self._init()
 
-    def on_federated_started(self, params):
-        self.init()
-
-    def init(self):
+    def _init(self):
         query = 'create table if not exists session (session_id text primary key, config text)'
         self._execute(query)
         query = f"insert or replace into session values (?,?)"
         self._execute(query, [self.id, self.tag])
 
     def _create_table(self, **kwargs):
-        if self.check_table_creation:
-            self.check_table_creation = False
+        if not self.initialized:
             params = self._extract_params(**kwargs)
             sub_query = ''
             for param in params:
@@ -44,6 +43,7 @@ class SQLiteLogger(FederatedSubscriber):
             )
             '''
             self._execute(query)
+            self.initialized = True
 
     def _insert(self, params):
         sub_query = ' '.join(['?,' for _ in range(len(params))]).rstrip(',')

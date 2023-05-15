@@ -18,3 +18,5 @@ class KDD_LR(torch.nn.Module):
         x = self.dropout(x)
         x = self.softmax(self.l3(x))
         return x
+
+

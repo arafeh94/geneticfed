@@ -43,9 +43,11 @@ class Graphs:
             ylabel:
             configs: a array of dictionaries containing session_id: the session id in the database,
                 field: the field name in the table,
-                config: the plot configurations, transform: a callable to transform the values to another
+                config: the plot configurations,
+                transform: a callable to transform the values to another, take values as input
+                where: add where to the query "where a=1 and b=2"
             title: the title of the plot
-            animated: animate the image (require the original plot to be shown not the one in intellij
+            animated: animate the image (require the normal.py plot to be shown not the one in intellij
             save_path: save location if needed
             example:
             graphs.plot([
@@ -59,11 +61,15 @@ class Graphs:
         """
         plt.clf()
         tables = self._db.tables()
-        sessions = [(item['session_id'], item['field'], item['config'] if 'config' in item else {},
-                     item['transform'] if 'transform' in item else None) for item in configs]
+        sessions = [(
+            item['session_id'], item['field'],
+            item['config'] if 'config' in item else {},
+            item['transform'] if 'transform' in item else None,
+            item['where'] if 'where' in item else None,
+        ) for item in configs]
         session_values = {}
-        for session_id, field, config, transform in sessions:
-            values = self._db.get(session_id, field)
+        for session_id, field, config, transform, where in sessions:
+            values = self._db.get(session_id, field, where)
             if transform:
                 transformers = transform if isinstance(transform, list) else [transform]
                 for trans in transformers:
@@ -86,10 +92,10 @@ class Graphs:
                 plt.pause(pause)
                 round_id += 1
         else:
-            for session_id, field, config, transform in sessions:
+            for session_id, field, config, transform, where in sessions:
                 plt.plot(session_values[f'{session_id}_{field}_{str(transform)}'], **config)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        plt.xlabel(xlabel, fontsize=18)
+        plt.ylabel(ylabel, fontsize=18)
         plt.title(title)
         plt.legend(loc='lower right')
         if callable(plt_func):

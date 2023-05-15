@@ -19,6 +19,7 @@ class ClientSelectionCounter(FederatedSubscriber):
         super().__init__()
         self.client_counter = defaultdict(int)
         self.save_dir = save_dir
+        utils.validate_path(self.save_dir)
 
     def on_trainers_selected(self, params):
         trainers_ids, context = params['trainers_ids'], params['context']

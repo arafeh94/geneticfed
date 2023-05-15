@@ -3,6 +3,7 @@ import sys
 
 from libs.model.linear.lr_kdd import KDD_LR
 from src.federated.events import Events
+from src.federated.subscribers.analysis import ClientSelectionCounter
 from src.federated.subscribers.trackers import BandwidthTracker
 
 sys.path.append('../../')
@@ -27,7 +28,9 @@ client_data = preload('mnist', LabelDistributor(100, 10, 600, 600))
 
 trainer_params = TrainerParams(trainer_class=trainers.TorchTrainer, batch_size=50, epochs=1, optimizer='sgd',
                                criterion='cel', lr=0.001)
+
 client_selector = client_selectors.ClusterSelector(selection_size=10, cluster_count=10)
+
 federated = FederatedLearning(
     trainer_manager=SeqTrainerManager(),
     trainer_config=trainer_params,
@@ -46,9 +49,8 @@ federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_
 federated.add_subscriber(Timer([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
 # federated.add_subscriber(RoundAccuracy(plot_ratio=0))
 # federated.add_subscriber(RoundLoss(plot_ratio=0))
-federated.add_subscriber(SQLiteLogger('band', 'res.db'))
-federated.add_subscriber(BandwidthTracker())
-
+federated.add_subscriber(SQLiteLogger('band2', './tst/res.db'))
+federated.add_subscriber(ClientSelectionCounter('./counts.png'))
 logger.info("----------------------")
 logger.info("start federated learning")
 logger.info("----------------------")

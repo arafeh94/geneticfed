@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.autograd.grad_mode import F
 
 
 class Cnn1D(nn.Module):
@@ -36,7 +35,7 @@ class Cnn1D(nn.Module):
 
 
 class CNN_OriginalFedAvg(torch.nn.Module):
-    """The CNN model used in the original FedAvg paper:
+    """The CNN model used in the normal.py FedAvg paper:
     "Communication-Efficient Learning of Deep Networks from Decentralized Data"
     https://arxiv.org/abs/1602.05629.
 

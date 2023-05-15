@@ -3,6 +3,7 @@ import logging
 import sys
 
 from apps.dbs import distributors
+from apps.genetics.src import initializer
 from src.federated.subscribers.fed_plots import EMDWeightDivergence
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
 
@@ -17,7 +18,6 @@ from src.data.data_loader import preload
 from libs.model.linear.lr import LogisticRegression
 from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
-from apps.genetic_selectors.algo import initializer
 from src.federated.components import metrics, client_selectors, aggregators
 from src.federated.federated import Events
 from src.federated.federated import FederatedLearning
