@@ -70,6 +70,8 @@ class PickleDataProvider(DataProvider):
             return True
         except Exception as e:
             logger.info(f'error while downloading the file {e}')
+            logger.info("\nyou can manually download and extract to your defined dataset folder"
+                        f"\nURL: {url}")
             raise e
         finally:
             if self._file_exists(into):

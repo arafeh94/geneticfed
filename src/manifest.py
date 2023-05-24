@@ -3,7 +3,7 @@ from collections import namedtuple
 from pathlib import Path
 
 ROOT_PATH = str(Path(__file__).parent.parent)
-DATA_PATH = "D:/Datasets/"
+DATA_PATH = "C:/Datasets/"
 CHECKPOINTS_PATH = f'{ROOT_PATH}/checkpoints.fed'
 
 wandb_config = {
