@@ -48,6 +48,11 @@ class TrainerParams:
     def get_criterion(self):
         return params.criterion(self.criterion, **self.args)
 
+    def __repr__(self):
+        rpr = f"e{self.epochs}b{self.batch_size}"
+        rpr += rpr + f"lr{self.args['lr']}" if 'lr' in self.args else ""
+        return rpr
+
 
 class Trainer(ABC):
     @abstractmethod

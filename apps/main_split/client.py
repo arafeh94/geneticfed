@@ -1,23 +1,30 @@
 import copy
 
 import torch
+from torch import nn
 from torch.optim import Adam
 
 from src.data.data_container import DataContainer
+from src.federated.components.trainers import TorchTrainer
+from src.federated.federated import FederatedLearning
+from src.federated.protocols import TrainerParams
 
 t_optimizer = None
 
 
-class Trainer:
+class Trainer(TorchTrainer):
     def __init__(self, initial_model):
+        super().__init__()
         self.model = initial_model
         self.optimizer = Adam(self.model.parameters(), lr=0.01)
         self.device = torch.device('cuda')
         self.model_output = None
         self.is_trained = False
 
-    def train(self, data):
-        inputs, labels = (data.x, data.y) if isinstance(data, DataContainer) else (data[0], data[1])
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
+              config: TrainerParams):
+        inputs, labels = (train_data.x, train_data.y) if isinstance(train_data, DataContainer) \
+            else (train_data[0], train_data[1])
         inputs = inputs.to(self.device)
         labels = labels.clone().detach().long().to(self.device)
         self.model.to(self.device)
@@ -42,4 +49,4 @@ class Client(Trainer):
         self.data = data
 
     def local_train(self):
-        return super(Client, self).train(self.data)
+        return super(Client, self).train(None, self.data, None, None)

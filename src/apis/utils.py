@@ -129,6 +129,10 @@ def enable_logging(file_name=None, level=logging.INFO):
         logging.basicConfig(level=logging.INFO)
 
 
+def swap(a, b):
+    return b, a
+
+
 def validate_state_dicts(model_state_dict_1, model_state_dict_2):
     if len(model_state_dict_1) != len(model_state_dict_2):
         logger.info(

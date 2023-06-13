@@ -56,8 +56,8 @@ def generate(clients_data, initial_model, client_cluster_size, cluster_limit=1) 
     for i in range(0, len(clients_data), client_cluster_size):
         cluster_data = clients_data.select(range(i, i + client_cluster_size))
         for index, dt in cluster_data.items():
-            cluster_client.append(Client(dt, initial_model, 1))
-            if len(cluster_client) >= cluster_limit:
+            cluster_client.append(Client(dt.as_tensor(), initial_model, 1, cid=index))
+            if cluster_limit != 0 and len(cluster_client) >= cluster_limit:
                 clusters[cluster_id] = Cluster(initial_model, cluster_client)
                 cluster_id += 1
                 cluster_client = []

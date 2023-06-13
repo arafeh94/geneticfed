@@ -4,6 +4,8 @@ import math
 import time
 from collections import defaultdict
 from functools import reduce
+from typing import Union
+
 from src.apis.broadcaster import Broadcaster
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
@@ -16,9 +18,10 @@ from src.federated.components.trainer_manager import TrainerManager
 class FederatedLearning(Broadcaster):
 
     def __init__(self, trainer_manager: TrainerManager, trainer_config: TrainerParams, aggregator: Aggregator,
-                 client_selector: ClientSelector, metrics: ModelInfer, trainers_data_dict: Dict[int, DataContainer],
-                 initial_model: callable, num_rounds=10, desired_accuracy=0.99, train_ratio=0.8,
-                 accepted_accuracy_margin=False, test_data: DataContainer = None, zero_client_exception=True, **kwargs):
+                 client_selector: ClientSelector, metrics: ModelInfer,
+                 trainers_data_dict: Union[None, Dict[int, DataContainer]], initial_model: callable, num_rounds=10,
+                 desired_accuracy=0.99, train_ratio=0.8, accepted_accuracy_margin=False,
+                 test_data: DataContainer = None, zero_client_exception=True, **kwargs):
         super().__init__()
         self.trainer_config = trainer_config
         self.trainer_manager = trainer_manager
@@ -38,9 +41,11 @@ class FederatedLearning(Broadcaster):
         self.test_data = test_data
         self.trainers_train = self.trainers_data_dict
         self.is_finished = False
+        self.is_started = False
         self.zero_client_exception = zero_client_exception
         self.logger = logging.getLogger('FederatedLearning')
         if self.test_data is None:
+            self.validate_on_device()
             self.test_data = Dict()
             self.trainers_train = Dict()
             for trainer_id, data in trainers_data_dict.items():
@@ -67,8 +72,11 @@ class FederatedLearning(Broadcaster):
         self.broadcast(Events.ET_FED_START, **self.configs())
         self.context.build(self)
         self.broadcast(Events.ET_INIT, global_model=self.context.model)
+        self.is_started = True
 
     def one_round(self):
+        if not self.is_started:
+            raise Exception('Federated instance is not yet initialized. Use [init] before [one_round]')
         if self.is_finished:
             return self.is_finished
         self.broadcast(Events.ET_ROUND_START, round=self.context.round_id)
@@ -183,6 +191,13 @@ class FederatedLearning(Broadcaster):
         args = reduce(lambda x, y: dict(x, **y), ({'context': self.context}, kwargs))
         super(FederatedLearning, self).broadcast(event_name, **args)
 
+    @staticmethod
+    def on_device_trainer_data_builder(trainers_count):
+        trainer_data_dict = Dict()
+        for i in range(trainers_count):
+            trainer_data_dict[i] = DataContainer([], [])
+        return trainer_data_dict
+
     class Context:
         def __init__(self):
             self.round_id = 0
@@ -261,3 +276,11 @@ class FederatedLearning(Broadcaster):
 
         def get_field(self, field_name):
             return [items[field_name] for rnd, items in self.history.items()]
+
+    def validate_on_device(self):
+        for index, trainer in self.trainers_data_dict.items():
+            trainer: DataContainer
+            if len(trainer) == 0:
+                raise Exception("For on device training [test_data] should not be null"
+                                "\nOn device training don't works without providing a seperated testing dataset"
+                                "\nPlease provide a DataContainer containing data for benchmarking")

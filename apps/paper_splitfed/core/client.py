@@ -6,21 +6,23 @@ import torch
 from torch.optim import Adam
 
 from src.data.data_container import DataContainer
+from src.federated.components.trainers import TorchTrainer
 
 t_optimizer = None
 
 
-class Trainer:
+class Trainer(TorchTrainer):
     def __init__(self, initial_model, speed=1, lr=0.0001):
+        super().__init__()
         self.model = initial_model
         self.optimizer = Adam(self.model.parameters(), lr=lr)
-        self.device = torch.device('cuda')
+        self.device = torch.device('cpu')
         self.model_output = None
         self.is_trained = False
         self.speed = speed
         self.id = random.randint(0, 999999999)
 
-    def train(self, data):
+    def split_train(self, data: DataContainer):
         inputs, labels = (data.x, data.y) if isinstance(data, DataContainer) else (data[0], data[1])
         inputs = inputs.to(self.device)
         labels = labels.clone().detach().long().to(self.device)
@@ -41,9 +43,10 @@ class Trainer:
 
 
 class Client(Trainer):
-    def __init__(self, data, initial_model, speed=1, lr=0.0001):
+    def __init__(self, data, initial_model, speed=1, lr=0.0001, cid=None):
         super().__init__(initial_model, speed, lr)
         self.data = data
+        self.cid = cid
 
     def local_train(self):
-        return super(Client, self).train(self.data)
+        return super(Client, self).split_train(self.data)

@@ -1,6 +1,7 @@
 import atexit
 
 from src.federated.events import FederatedSubscriber
+from src.federated.federated import FederatedLearning
 from src.manifest import wandb_config
 
 
@@ -23,7 +24,8 @@ class WandbLogger(FederatedSubscriber):
             self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config)
 
     def on_round_end(self, params):
-        self.wandb.log(params['context'])
+        context: FederatedLearning.Context = params['context']
+        self.wandb.log(context.last_entry())
 
     def on_federated_ended(self, params):
         self.wandb.finish()

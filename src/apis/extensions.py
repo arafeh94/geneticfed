@@ -176,6 +176,8 @@ class Serializable:
 # noinspection PyUnresolvedReferences
 class TorchModel:
     def __init__(self, model):
+        import src.apis.federated_tools as ft
+        self.aggregator = ft.asyncgregate
         self.model = model
         self.logger = logging.getLogger('TorchModel')
 
@@ -204,7 +206,7 @@ class TorchModel:
         model.to(device)
         model.train()
         data_size = len(batched) * len(batched[0][0])
-        iterator = tqdm.tqdm(range(epochs), 'training')
+        iterator = tqdm.tqdm(range(epochs), 'training', disable=(verbose == 0))
         for _ in iterator:
             correct = 0
             for batch_idx, (x, labels) in enumerate(batched):
@@ -287,6 +289,10 @@ class TorchModel:
 
     def state(self):
         return self.extract().state_dict()
+
+    def dilute(self, other: 'TorchModel', ratio):
+        new_weights = self.aggregator(self.state(), other.state(), ratio)
+        self.load(new_weights)
 
 
 def first(items: list):

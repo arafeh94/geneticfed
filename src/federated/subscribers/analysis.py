@@ -15,27 +15,30 @@ from src.federated.federated import FederatedLearning
 
 
 class ClientSelectionCounter(FederatedSubscriber):
-    def __init__(self, save_dir=None):
+    def __init__(self, save_dir=None, show_plot=False):
         super().__init__()
         self.client_counter = defaultdict(int)
         self.save_dir = save_dir
-        utils.validate_path(self.save_dir)
+        self.show_plot = show_plot
+        if save_dir:
+            utils.validate_path(self.save_dir)
 
     def on_trainers_selected(self, params):
         trainers_ids, context = params['trainers_ids'], params['context']
         for trainer_id in trainers_ids:
             self.client_counter[trainer_id] += 1
         context.store(selection_counter=json.dumps(self.client_counter))
-        self.plot(show=False)
+        self.plot(False)
 
     def on_federated_ended(self, params):
         logging.getLogger('selection_counter').info(self.client_counter)
-        self.plot(show=True)
+        self.plot(self.show_plot)
 
-    def plot(self, show=True):
+    def plot(self, show_plot):
         plt.bar(self.client_counter.keys(), self.client_counter.values())
-        plt.savefig(f"{self.save_dir}") if self.save_dir else ()
-        if show:
+        if self.save_dir:
+            plt.savefig(f"{self.save_dir}") if self.save_dir else ()
+        if show_plot:
             plt.show()
 
 

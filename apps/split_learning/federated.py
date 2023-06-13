@@ -1,9 +1,7 @@
 import logging
 import sys
 
-from libs.model.linear.lr_kdd import KDD_LR
 from libs.model.linear.mnist_net import MnistNet
-from src.federated.events import Events
 from src.federated.subscribers.trackers import BandwidthTracker
 
 sys.path.append('../../')

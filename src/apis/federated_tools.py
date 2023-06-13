@@ -62,7 +62,14 @@ def aggregate(models_dict: dict, sample_dict: dict):
     return averaged_params
 
 
-def asyncgregate(current_weights, staled_weights, staleness):
+def asyncgregate(current_weights, staled_weights, staleness: int):
+    """
+    Method created to simulate FedAsync, used to dilute the stalled clients weights during the aggregation
+    @param current_weights: current model weights
+    @param staled_weights: the weights of stalled client having old weights that should be diluted
+    @param staleness: should be an int >=1. Equals to the number of round the client missed the training.
+    @return:
+    """
     alpha = 1. / (1 + staleness)
 
     for name, param in current_weights.items():
@@ -76,8 +83,8 @@ def infer(model, test_data, transformer=None):
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
         for batch_idx, (x, target) in enumerate(test_data):
-            x = x.to('cuda')
-            target = target.to('cuda')
+            x = x.to('cpu')
+            target = target.to('cpu')
             if transformer:
                 x, target = transformer(x, target)
             pred = model(x)

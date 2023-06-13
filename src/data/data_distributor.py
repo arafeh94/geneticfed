@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import typing
 from libs.data_distribute import distribute
-from src.apis import lambdas
+from src.apis import lambdas, utils
 from src.apis.extensions import Dict
 from src.data.data_container import DataContainer
 
@@ -198,7 +198,7 @@ class SizeDistributor(Distributor):
 
 
 class UniqueDistributor(Distributor):
-    def __init__(self, num_clients, min_size, max_size):
+    def __init__(self, num_clients=0, min_size=0, max_size=0):
         super().__init__()
         self.num_clients = num_clients
         self.min_size = min_size
@@ -214,12 +214,28 @@ class UniqueDistributor(Distributor):
             if ys[index] not in group:
                 group[ys[index]] = []
             group[ys[index]].append(xs[index])
+        if not self.num_clients:
+            self.num_clients = len(group.keys())
         for i in range(self.num_clients):
-            client_data_size = random.randint(self.min_size, self.max_size)
+            mins, maxs = self._sizes_values(len(group[i]))
+            client_data_size = random.randint(mins, maxs)
+            client_data_size = client_data_size if client_data_size else len(group[i])
             client_x = group[i][0:client_data_size]
             client_y = [i for _ in range(len(client_x))]
             clients_data[i] = DataContainer(client_x, client_y).as_tensor()
         return clients_data
+
+    def _rsizes(self, total, size):
+        if 0 < size <= 1:
+            return size * total
+        return size
+
+    def _sizes_values(self, group_len):
+        mins = self._rsizes(group_len, self.min_size)
+        maxs = self._rsizes(group_len, self.max_size)
+        if mins > maxs:
+            mins, maxs = utils.swap(mins, maxs)
+        return int(mins), int(maxs)
 
     def id(self):
         return f'unique_{self.num_clients}c_{self.min_size}mn_{self.max_size}mx'
@@ -319,7 +335,16 @@ class ManualDistributor(Distributor):
 
 class PipeDistributor(Distributor):
     @staticmethod
-    def pick_by_label_id(label_ids: list, size, repeat=1):
+    def pick_by_label_id(label_ids: list, size: int, repeat: int = 1) -> object:
+        """
+        pick from dataset records by labels
+        @param label_ids: the list of label ids
+        @param size: the amount of records that should be picked
+        @param repeat: how many instance this picker create. for instance, if repeat is 3 we create 3 clients
+         of the same distribution
+        @return: pipe function used by the distributor
+        """
+
         def picker(grouper: LabelDistributor.Grouper):
             per_label_size = int(size / len(label_ids))
             clients = []

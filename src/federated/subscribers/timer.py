@@ -15,6 +15,7 @@ class Timer(FederatedSubscriber):
     def __init__(self, show_only=None):
         super().__init__(None)
         self.ticks = defaultdict(lambda: 0)
+        self.times = {}
         self.show_only = show_only
         self.logger = logging.getLogger("fed_timer")
         if show_only is not None:
@@ -28,6 +29,7 @@ class Timer(FederatedSubscriber):
         if is_done:
             dif = now - self.ticks[name]
             dif_cpu = now_cpu - self.ticks[name + '_cpu']
+            self.times[name] = dif_cpu
             if self.show_only is not None and name not in self.show_only:
                 return
             self.logger.info(f'{name}, elapsed: {round(dif, 3)}s')
@@ -55,9 +57,9 @@ class Timer(FederatedSubscriber):
     def on_round_end(self, params):
         self.tick(self.ROUND, True)
         context: 'FederatedLearning.Context' = params['context']
-        context.store(round_time=self.ticks[Timer.ROUND])
-        context.store(aggregation_time=self.ticks[Timer.AGGREGATION])
-        context.store(training_time=self.ticks[Timer.TRAINING])
+        context.store(round_time=self.times[Timer.ROUND])
+        context.store(aggregation_time=self.times[Timer.AGGREGATION])
+        context.store(training_time=self.times[Timer.TRAINING])
 
     def on_aggregation_end(self, params):
         self.tick(self.AGGREGATION, True)

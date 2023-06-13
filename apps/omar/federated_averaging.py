@@ -2,9 +2,6 @@ import logging
 import random
 import sys
 
-from libs.model.linear.lr_kdd import KDD_LR
-from src.apis import lambdas
-from src.data.data_container import DataContainer
 from src.federated.subscribers.analysis import ClientSelectionCounter
 from src.federated.subscribers.fed_plots import RoundAccuracy
 from src.federated.subscribers.sqlite_logger import SQLiteLogger

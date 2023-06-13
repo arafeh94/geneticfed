@@ -7,8 +7,8 @@ DATA_PATH = "C:/Datasets/"
 CHECKPOINTS_PATH = f'{ROOT_PATH}/checkpoints.fed'
 
 wandb_config = {
-    'key': '3c35c1f04ebc7ffc1825f3056a6aabe714a1ccdc',
-    'project': 'geneticfed',
+    'key': '18de3183a3487d875345d2ee7948376df2a31c39',
+    'project': 'fedseq',
     'entity': 'arafeh',
 }
 

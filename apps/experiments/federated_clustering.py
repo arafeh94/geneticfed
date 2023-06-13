@@ -1,15 +1,12 @@
 import logging
 import sys
 
-from libs.model.linear.lr_kdd import KDD_LR
 from src.federated.events import Events
 from src.federated.subscribers.analysis import ClientSelectionCounter
-from src.federated.subscribers.trackers import BandwidthTracker
 
 sys.path.append('../../')
 
 from torch import nn
-from src.federated.subscribers.fed_plots import RoundAccuracy, RoundLoss
 from src.federated.subscribers.logger import FederatedLogger, TqdmLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
 from src.federated.subscribers.timer import Timer

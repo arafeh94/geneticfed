@@ -24,7 +24,7 @@ class TorchTrainer(Trainer):
         epochs = range(config.epochs)
         if 'verbose' in config.args and config.args['verbose']:
             epochs = tqdm(epochs)
-        for epoch in epochs:
+        for _ in epochs:
             batch_loss = []
             for batch_idx, (x, labels) in enumerate(train_data.batch(config.batch_size)):
                 x = x.to(self.device)

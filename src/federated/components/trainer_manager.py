@@ -45,6 +45,8 @@ class SeqTrainerManager(TrainerManager):
 
     def train_req(self, trainer_id, model, train_data, context, config):
         trainer = self.trainer_provider.collect(trainer_id, config)
+        train_data = trainer.__dict__['train_data'] if 'train_data' in trainer.__dict__ else train_data
+        train_data = trainer.__dict__['data'] if 'data' in trainer.__dict__ else train_data
         request = [trainer.train, model, train_data, context, config]
         self.train_requests[trainer_id] = request
         return request

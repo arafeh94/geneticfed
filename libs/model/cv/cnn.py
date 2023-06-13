@@ -14,7 +14,7 @@ class Cnn1D(nn.Module):
         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
 
         # Fully connected layers
-        self.lin3 = nn.Linear(256, 100)
+        self.lin3 = nn.Linear(1152, 100)
         self.lin4 = nn.Linear(100, self.n_classes)
 
     def forward(self, x):
