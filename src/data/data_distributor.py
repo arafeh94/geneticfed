@@ -25,6 +25,9 @@ class Distributor:
     def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
         pass
 
+    def __repr__(self):
+        return self.id()
+
 
 class DirichletDistributor(Distributor):
 

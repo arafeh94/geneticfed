@@ -18,10 +18,11 @@ class WandbLogger(FederatedSubscriber):
 
     def on_init(self, params):
         if self.resume:
-            self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config,
-                            id=self.id, resume="allow")
-        else:
-            self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config)
+            if self.id is None:
+                raise Exception('resumable requires that id is not None')
+        resume = 'allow' if self.resume else None
+        self.wandb.init(project=wandb_config['project'], entity=wandb_config['entity'], config=self.config,
+                        id=self.id, resume=resume)
 
     def on_round_end(self, params):
         context: FederatedLearning.Context = params['context']

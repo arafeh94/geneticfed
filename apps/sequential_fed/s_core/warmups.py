@@ -10,6 +10,7 @@ logger = logging.getLogger('warmups')
 
 
 def sequential_warmup(model, rounds, train_clients, test_dataset: DataContainer, epochs, lr):
+    total_accs = []
     trainer = TorchModel(copy.deepcopy(model))
     last_round_trainers = []
     for k in range(rounds):
@@ -22,7 +23,8 @@ def sequential_warmup(model, rounds, train_clients, test_dataset: DataContainer,
             trainer_old = trainer.copy()
             if k == rounds - 1:
                 last_round_trainers.append(trainer.copy())
-        logger.info(f"avg: {trainer.infer(test_dataset.batch(500))}")
+        total_accs.append(trainer.infer(test_dataset.batch(500)))
+        logger.info(f"avg: {total_accs[-1]}")
     models_states = {}
     models_sizes = {}
     for i in range(len(last_round_trainers)):
@@ -30,8 +32,9 @@ def sequential_warmup(model, rounds, train_clients, test_dataset: DataContainer,
         models_sizes[i] = 1
     weights = federated_tools.aggregate(models_states, models_sizes)
     trainer.load(weights)
-    logger.info(f"final avg: {trainer.infer(test_dataset.batch(), verbose=0)}")
-    return weights
+    total_accs.append(trainer.infer(test_dataset.batch(), verbose=0))
+    logger.info(f"final avg: {total_accs[-1]}")
+    return weights, [dc[0] for dc in total_accs]
 
 
 def original_warmup(warmup_ratio, train_data, model, epochs=500):
@@ -39,5 +42,5 @@ def original_warmup(warmup_ratio, train_data, model, epochs=500):
         lambdas.dict2dc).as_tensor()
     train_data = train_data.map(lambda cid, dt: (cid, dt.concat(warmup_data)))
     initial_model = TorchModel(copy.deepcopy(model))
-    initial_model.train(warmup_data.batch(), epochs=epochs, verbose=1)
-    return train_data, initial_model.extract().state_dict()
+    weights, acc = initial_model.train(warmup_data.batch(), epochs=epochs, verbose=1)
+    return train_data, weights, acc

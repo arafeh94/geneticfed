@@ -11,6 +11,7 @@ import numpy as np
 import torch
 import tqdm
 from sklearn import decomposition
+from src.manifest import wandb_config
 from torch import nn
 
 T = typing.TypeVar('T')
@@ -203,6 +204,7 @@ class TorchModel:
         criterion = kwargs.get('criterion', nn.CrossEntropyLoss())
         device = kwargs['device'] if 'device' in kwargs else ('cuda' if torch.cuda.is_available() else 'cpu')
         verbose = kwargs.get('verbose', 1)
+        accs = []
         model.to(device)
         model.train()
         data_size = len(batched) * len(batched[0][0])
@@ -219,9 +221,10 @@ class TorchModel:
                 optimizer.step()
                 correct += (log_probs.max(dim=1)[1] == labels).float().sum()
             accuracy = round(100 * (float(correct) / data_size), 2)
+            accs.append(accuracy)
             iterator.set_postfix_str(f"accuracy: {accuracy}")
         weights = model.cpu().state_dict()
-        return weights
+        return weights, accs
 
     def infer(self, batched, **kwargs):
         verbose = kwargs.get('verbose', 1)

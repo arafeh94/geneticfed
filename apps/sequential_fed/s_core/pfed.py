@@ -11,7 +11,7 @@ from src.federated.subscribers.timer import Timer
 from src.federated.subscribers.wandb_logger import WandbLogger
 
 
-def create_fl(client_data, model, config):
+def create_fl(client_data, test, model, config, id=None):
     # trainers configuration
     trainer_params = TrainerParams(
         trainer_class=trainers.TorchTrainer,
@@ -25,8 +25,9 @@ def create_fl(client_data, model, config):
         aggregator=aggregators.AVGAggregator(),
         metrics=metrics.AccLoss(batch_size=50, criterion='cel'),
         client_scanner=DefaultScanner(client_data),
-        client_selector=client_selectors.All(),
+        client_selector=client_selectors.Random(config['cr']),
         trainers_data_dict=client_data,
+        test_data=test,
         initial_model=lambda: copy.deepcopy(model),
         num_rounds=config['fe_rounds'],
         desired_accuracy=0.99
@@ -36,5 +37,6 @@ def create_fl(client_data, model, config):
     federated.add_subscriber(TqdmLogger())
     federated.add_subscriber(FederatedLogger([Events.ET_TRAINER_SELECTED, Events.ET_ROUND_FINISHED]))
     federated.add_subscriber(Timer([Timer.FEDERATED, Timer.ROUND]))
-    federated.add_subscriber(WandbLogger(config=config))
+    if 'wandb' not in config or ('wandb' in config and config['wandb']):
+        federated.add_subscriber(WandbLogger(config=config, id=id))
     return federated

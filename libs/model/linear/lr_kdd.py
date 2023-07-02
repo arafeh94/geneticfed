@@ -2,7 +2,7 @@ import torch
 
 
 class KDD_LR(torch.nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim=41, output_dim=23):
         super(KDD_LR, self).__init__()
         self.l1 = torch.nn.Linear(input_dim, 288)
         self.dropout = torch.nn.Dropout(0.1)
@@ -18,5 +18,3 @@ class KDD_LR(torch.nn.Module):
         x = self.dropout(x)
         x = self.softmax(self.l3(x))
         return x
-
-
