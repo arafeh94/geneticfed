@@ -1,7 +1,9 @@
+import copy
 from typing import Tuple, Dict
 
+import numpy as np
 import torch
-from torch import nn
+from torch import nn, Tensor
 from tqdm import tqdm
 
 from src.data.data_container import DataContainer
@@ -15,10 +17,11 @@ class TorchTrainer(Trainer):
 
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
               config: TrainerParams) -> Tuple[any, int]:
-        model.to(self.device)
-        model.train()
+        # model.to(self.device)
+        # model.train()
         optimizer = config.get_optimizer()(model)
-        criterion = config.get_criterion()
+
+        criterion = nn.CrossEntropyLoss()
 
         epoch_loss = []
         epochs = range(config.epochs)
@@ -27,8 +30,8 @@ class TorchTrainer(Trainer):
         for _ in epochs:
             batch_loss = []
             for batch_idx, (x, labels) in enumerate(train_data.batch(config.batch_size)):
-                x = x.to(self.device)
-                labels = labels.to(self.device)
+                # x = x.to(self.device)
+                # labels = labels.to(self.device)
                 optimizer.zero_grad()
                 log_probs = model(x)
                 loss = criterion(log_probs, labels)
@@ -40,6 +43,10 @@ class TorchTrainer(Trainer):
 
         weights = model.cpu().state_dict()
         return weights, len(train_data)
+
+
+def count_occurrences(tensor, target_number):
+    return int((tensor == target_number).sum())
 
 
 class CPUTrainer(TorchTrainer):
@@ -58,4 +65,15 @@ class TorchChunkTrainer(TorchTrainer):
         x = train_data.x[data_from:data_to]
         y = train_data.y[data_from:data_to]
         chunk = DataContainer(x, y)
-        return super(TorchChunkTrainer, self).train(model, chunk, round_id, config)
+        return super(TorchChunkTrainer, self).train(model, chunk, context, config)
+
+
+class SelfishTrainer(TorchTrainer):
+    def __init__(self, howSelfishAmI):
+        super().__init__()
+        self.howSelfishAmI = howSelfishAmI
+
+    def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
+              config: TrainerParams) -> Tuple[any, int]:
+        # train_data = use self.howSelfishAmI to update the train_data for a new one
+        return super(SelfishTrainer, self).train(model, train_data, context, config)

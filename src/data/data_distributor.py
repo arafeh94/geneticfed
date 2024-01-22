@@ -29,6 +29,30 @@ class Distributor:
         return self.id()
 
 
+# noinspection PyTypeChecker
+class ClusterDistributor(Distributor):
+
+    def __init__(self, cluster_distributor, cluster_client_num: int, min_size, max_size):
+        super().__init__()
+        self.cluster_client_num = cluster_client_num
+        self.cluster_distributor = cluster_distributor
+        self.min_size = min_size
+        self.max_size = max_size
+
+    def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        clusters = {}
+        clusters_data = self.cluster_distributor.distribute(data)
+        for cluster_index in range(len(clusters_data)):
+            cluster_data: DataContainer = clusters_data[cluster_index]
+            label_distributor = LabelDistributor(self.cluster_client_num, len(cluster_data.labels()),
+                                                 self.min_size, self.max_size)
+            clusters[cluster_index] = label_distributor.distribute(cluster_data)
+        return Dict(clusters)
+
+    def id(self):
+        return "cluster_distributor"
+
+
 class DirichletDistributor(Distributor):
 
     def __init__(self, num_clients, num_labels, skewness=0.5):

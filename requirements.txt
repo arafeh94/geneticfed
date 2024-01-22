@@ -5,7 +5,6 @@ dill
 falcon
 # networkx
 psutil
-mysql-connector-python
 matplotlib
 scipy
 Pillow

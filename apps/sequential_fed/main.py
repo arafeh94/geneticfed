@@ -1,9 +1,7 @@
 import copy
-from sys import argv
+import time
 
-import wandb
 from apps.main_split.models import MnistNet
-from apps.sequential_fed import toos
 from apps.sequential_fed.s_core import warmups, pfed
 from libs.model.linear.lr_kdd import KDD_LR
 from src.apis import lambdas, utils
@@ -20,6 +18,8 @@ train_clients = distributor.distribute(train).map(lambdas.as_tensor)
 base_model = MnistNet(28 * 28, 32, 10)
 
 for config in configs:
+    time_taken = 0
+    current_time = time.time()
     run_id = config['id'] if 'id' in config else None
     model = copy.deepcopy(base_model)
     method = config['method']
@@ -27,13 +27,16 @@ for config in configs:
     if method == "seq":
         initial_weights, acc = warmups.sequential_warmup(
             model, config['wp_rounds'], train_clients, test, config['wp_epochs'], config['lr'])
+        time_taken = time.time() - current_time
     elif method == "warmup":
         train_data, initial_weights, acc = warmups.original_warmup(
             config['wp_ratio'], train_clients, model, config['wp_epochs'])
+        time_taken = time.time() - current_time
     else:
         initial_weights = model.state_dict()
+    print(time_taken)
 
-    model.load_state_dict(initial_weights)
-    config['pre_acc'] = acc
-    federate = pfed.create_fl(train_clients, test, model, config, run_id)
-    federate.start()
+    # model.load_state_dict(initial_weights)
+    # config['pre_acc'] = acc
+    # federate = pfed.create_fl(train_clients, test, model, config, run_id)
+    # federate.start()

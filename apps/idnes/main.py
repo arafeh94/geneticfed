@@ -2,7 +2,7 @@ import logging
 import random
 from pathlib import Path
 
-from apps.idnes.IidDistributor import IidDistributor
+from apps.idnes.distributor import IidDistributor
 from libs.model.linear.lr import LogisticRegression
 from src.apis import lambdas
 from src.data.data_distributor import LabelDistributor

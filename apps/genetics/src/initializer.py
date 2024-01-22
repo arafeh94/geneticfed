@@ -1,6 +1,6 @@
 import logging
 import typing
-from apps.genetic_selectors.algo.cluster_selector import ClusterSelector
+from apps.donotuse.genetic_selectors.algo.cluster_selector import ClusterSelector
 from apps.genetics.src import genetic
 from apps.genetics.src.context import InitiatorContext
 from src.apis import utils

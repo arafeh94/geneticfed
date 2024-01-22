@@ -10,7 +10,7 @@ from src.data.data_container import DataContainer
 logger = logging.getLogger('tools')
 
 
-def train(model, train_data, epochs=10, lr=0.1):
+def train(model, train_data, epochs=10, lr=0.1, logging=True):
     torch.cuda.empty_cache()
     # change to train mode
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -20,7 +20,7 @@ def train(model, train_data, epochs=10, lr=0.1):
     criterion = nn.CrossEntropyLoss()
 
     epoch_loss = []
-    for epoch in tqdm.tqdm(range(epochs), 'training'):
+    for epoch in tqdm.tqdm(range(epochs), 'training') if logging else range(epochs):
         batch_loss = []
         for batch_idx, (x, labels) in enumerate(train_data):
             x = x.to(device)

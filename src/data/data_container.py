@@ -1,5 +1,6 @@
 import copy
 import typing
+from abc import abstractmethod
 
 import numpy
 import numpy as np
@@ -63,7 +64,7 @@ class DataContainer(Functional):
             return DataContainer(self.x.numpy().tolist(), self.y.numpy().tolist())
         return self
 
-    def split(self, train_freq) -> ('DataContainer', 'DataContainer'):
+    def split(self, train_freq) -> typing.Tuple['DataContainer', 'DataContainer']:
         total_size = len(self)
         train_size = int(total_size * train_freq)
         x_train = self.x[0:train_size]
@@ -160,6 +161,9 @@ class DataContainer(Functional):
                     raise StopIteration
 
         return Iterator(self)
+
+    def __iter__(self):
+        return self.iter()
 
     def __getitem__(self, key):
         return DataContainer(self.x[key], self.y[key])

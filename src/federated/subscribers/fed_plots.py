@@ -5,8 +5,9 @@ from abc import abstractmethod
 
 from matplotlib import pyplot as plt
 from scipy.stats import wasserstein_distance
-
+import matplotlib as mpl
 from src.apis import utils
+from src.apis.utils import compress
 from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 
@@ -21,7 +22,7 @@ class BasePlotter(FederatedSubscriber):
 
     def on_round_end(self, params):
         context = params['context']
-        if context.round_id > 0 and context.round_id % self.plot_ratio == 0:
+        if context.round_id % self.plot_ratio == 0:
             plot = self.round_plot(params)
             self.execute(plot, context)
 
@@ -184,3 +185,42 @@ class EMDWeightDivergence(BasePlotter):
             all_results.append(result)
         all_results = sum(all_results) / len(all_results)
         return all_results
+
+
+class WeightPlot(BasePlotter):
+    def __init__(self, plot_ratio=1, show_plot=True):
+        super().__init__(plot_ratio=plot_ratio, show_plot=show_plot)
+        self.global_weights = None
+        self.trainers_weights = None
+
+    def on_training_end(self, params):
+        self.trainers_weights = params['trainers_weights']
+
+    def on_aggregation_end(self, params):
+        self.global_weights = params['global_weights']
+
+    def round_plot(self, params):
+        mpl.rcParams['font.size'] = 14
+        gw = self.global_weights
+        pca_gw = compress(gw['linear.weight'], 4)
+        c_weights = self.trainers_weights
+        figure = plt.figure(1, figsize=(8, 4))
+        plot = figure.add_subplot()
+        for c_id, c_weight in c_weights.items():
+            pca_weight = compress(c_weight['linear.weight'], 4)
+            plot.plot(pca_weight, label=rf'$C_{c_id}$')
+        plot.plot(pca_gw, color='black', linewidth=3, label='GM')
+        plt.xlabel('Weight Index')
+        plt.ylabel('Weight Value')
+        plt.grid(True)
+        plt.xlim(0, 39)
+        plot.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2),
+                    ncol=4, fancybox=True, shadow=True)
+        plt.tight_layout()
+        return figure
+
+    def final_plot(self, params):
+        pass
+
+    def save_file_name(self, context: FederatedLearning.Context):
+        return f'weights_plot_{context.round_id}'

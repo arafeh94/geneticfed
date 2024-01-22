@@ -1,17 +1,14 @@
 import logging
-import os
-import sys
-from os.path import dirname
 
-from apps.genetic_selectors.algo import initializer
-from apps.genetic_selectors.new_genetic_selectors.algo.selector import GeneticSelector
+from apps.donotuse.genetic_selectors.algo import initializer
+from apps.genetic_selectors_v2.new_genetic_selectors.algo.selector import GeneticSelector
 from libs.model.cv.cnn import Cnn1D
 from src.apis import lambdas
 from src.data.data_loader import preload
 from torch import nn
 from src.federated.subscribers.logger import FederatedLogger
 from src.federated.subscribers.sqlite_logger import SQLiteLogger
-from src.federated.components.trainers import CPUTrainer, TorchTrainer
+from src.federated.components.trainers import TorchTrainer
 from src.federated.protocols import TrainerParams
 from src.federated.components import metrics, aggregators
 from src.federated.federated import Events

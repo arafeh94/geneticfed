@@ -1,13 +1,7 @@
-import math
-import sqlite3
 import typing
 from collections import defaultdict
 from typing import Callable
-
-import numpy as np
 from matplotlib import pyplot as plt, pyplot
-
-from src.apis import utils
 from src.apis.fed_sqlite import FedDB
 
 

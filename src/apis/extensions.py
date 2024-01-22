@@ -300,3 +300,91 @@ class TorchModel:
 
 def first(items: list):
     return next(filter(lambda x: x, items))
+
+
+class Node:
+    def __init__(self, value: T):
+        self.value = value
+        self.next = None
+        self.prev = None
+
+    def next_node(self) -> 'Node[T]':
+        return self.next
+
+    def prev_node(self) -> 'Node[T]':
+        return self.prev
+
+    def has_next(self) -> bool:
+        return self.next_node() is not None
+
+    def has_prev(self) -> bool:
+        return self.prev_node() is not None
+
+
+class LinkedList:
+    def __init__(self):
+        self.head: typing.Union[None, Node] = None
+
+    def is_empty(self):
+        return self.head is None
+
+    def append(self, data):
+        new_node = Node(data)
+        if self.head is None:
+            self.head = new_node
+            return
+        last_node = self.head
+        while last_node.next:
+            last_node = last_node.next
+        last_node.next = new_node
+        new_node.prev = last_node
+
+    def prepend(self, data):
+        new_node = Node(data)
+        new_node.next = self.head
+        if self.head:
+            self.head.prev = new_node
+        self.head = new_node
+
+    def delete_node(self, key):
+        current_node = self.head
+        if current_node and current_node.data == key:
+            self.head = current_node.next
+            if current_node.next:
+                current_node.next.prev = None
+            current_node = None
+            return
+        while current_node and current_node.data != key:
+            current_node = current_node.next
+        if current_node is None:
+            return
+        if current_node.prev:
+            current_node.prev.next = current_node.next
+        if current_node.next:
+            current_node.next.prev = current_node.prev
+        current_node = None
+
+    def print_list(self):
+        current_node = self.head
+        while current_node:
+            print(current_node.data, end=" ")
+            current_node = current_node.next
+        print()
+
+    def get_first_node(self):
+        return self.head
+
+    def get_node_by_data(self, data):
+        current_node = self.head
+        while current_node:
+            if current_node.data == data:
+                return current_node
+            current_node = current_node.next
+        return None
+
+    @staticmethod
+    def create(lst: typing.List[T]):
+        linked_list = LinkedList()
+        for item in lst:
+            linked_list.append(item)
+        return linked_list

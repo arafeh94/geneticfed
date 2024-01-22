@@ -1,28 +1,20 @@
 import logging
-from typing import Tuple
-
-from torch import nn
 
 from apps.cluster_noniidness.core.modules import Cluster_TrainerProvider
 from apps.main_split import dist
 from apps.main_split.client import Client
-from apps.main_split.models import MnistServer, MnistNet
-from apps.split_learning.clusters import Cluster
-from libs.model.linear.lr import LogisticRegression
+from apps.main_split.models import MnistNet
+from apps.donotuse.split_learning import Cluster
 from src.apis import utils
-from src.app.prebuilt import FastFed
-from apps.paper_splitfed.core import clusters
-from src.data.data_container import DataContainer
+from apps.splitfed.core import clusters
 from src.data.data_loader import preload
-from src.federated.components import trainers, aggregators, metrics, client_selectors
-from src.federated.components.client_scanners import DefaultScanner, PositionScanner
+from src.federated.components import aggregators, metrics, client_selectors
+from src.federated.components.client_scanners import DefaultScanner
 from src.federated.components.trainer_manager import SeqTrainerManager
-from src.federated.components.trainers import TorchTrainer
 from src.federated.events import Events
 from src.federated.federated import FederatedLearning
-from src.federated.protocols import TrainerParams, Trainer
-from src.federated.subscribers.logger import TqdmLogger, FederatedLogger
-from src.federated.subscribers.timer import Timer
+from src.federated.protocols import TrainerParams
+from src.federated.subscribers.logger import FederatedLogger
 
 utils.enable_logging()
 

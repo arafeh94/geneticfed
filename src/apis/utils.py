@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import random
 import typing
 from datetime import datetime, timedelta
 from functools import reduce
@@ -124,9 +125,9 @@ def timed_func(seconds, callable: typing.Callable):
 
 def enable_logging(file_name=None, level=logging.INFO):
     if file_name:
-        logging.basicConfig(filename=file_name, filemode='w', datefmt='%H:%M:%S', level=logging.INFO)
+        logging.basicConfig(filename=file_name, filemode='w', datefmt='%H:%M:%S', level=level)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=level)
 
 
 def swap(a, b):
@@ -167,3 +168,35 @@ def validate_state_dicts(model_state_dict_1, model_state_dict_2):
             logger.info(f"Tensor mismatch: {v_1} vs {v_2}")
             return False
     return True
+
+
+class UniqueSelector:
+    def __init__(self, iterable):
+        self.iterable = iterable
+        self.selected = []
+
+    def select(self, index):
+        if index in self.selected:
+            raise Exception('inquired index have been already selected')
+        self.selected.append(index)
+        return self.iterable[index]
+
+    def select_random(self):
+        r = random.randint(0, len(self.iterable) - 1)
+        while r in self.selected:
+            r = random.randint(0, len(self.iterable) - 1)
+        return self.select(r)
+
+    def peek(self, reset=True):
+        select_index = 0 if len(self.selected) == 0 else max(self.selected) + 1
+        if select_index >= len(self.iterable):
+            if reset:
+                self.reset()
+                logger.info(f"fn[peek][reset]")
+                select_index = 0
+            else:
+                raise Exception('no more items left in the list')
+        return self.select(select_index)
+
+    def reset(self):
+        self.selected = []

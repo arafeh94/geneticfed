@@ -4,10 +4,10 @@ import pickle
 import sys
 from abc import abstractmethod
 
-from mega import Mega
 from zipfile_deflate64 import ZipFile
 import wget
 from src import manifest
+from src.apis import utils
 from src.data.data_container import DataContainer
 import validators
 import urllib.parse
@@ -62,6 +62,7 @@ class PickleDataProvider(DataProvider):
     def _get(self, url, into):
         try:
             logger.info(f'downloading file into {into}')
+            utils.validate_path(into)
             self._download(url, into)
             logger.info('extracting...')
             with ZipFile(into, 'r') as zipObj:
@@ -91,9 +92,13 @@ class PickleDataProvider(DataProvider):
 
     def _mega_downloader(self, url, directory):
         try:
+            from mega import Mega
             m = Mega().login()
             m.download_url(url, directory)
         except Exception as ignore:
+            logger.error('mega do not exists, please sure you install the mega.py package to the project.'
+                         'you can install it using: pip install mega.py')
+            logger.error('if the problem persist, please make sure you are using python <=3.10')
             pass
         return True
 

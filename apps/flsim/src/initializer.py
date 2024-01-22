@@ -1,6 +1,6 @@
 import numpy as np
 from torch import nn
-from apps.genetic_selectors.algo.context import Context
+from apps.donotuse.genetic_selectors.algo.context import Context
 from src.apis import utils, federated_tools
 
 

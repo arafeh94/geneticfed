@@ -118,6 +118,10 @@ class FederatedSubscriber(Subscriber):
          """
         pass
 
+    @staticmethod
+    def get_context(params) -> 'FederatedLearning.Context':
+        return params['context']
+
     def force(self) -> []:
         return []
 
