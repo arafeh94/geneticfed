@@ -3,8 +3,67 @@ import random
 from collections import defaultdict
 from typing import List, Dict
 
+from apps.donotuse.main_split import funcs
 from apps.splitfed.core.client import Client
+from src.apis.federated_tools import aggregate
 from src.apis.utils import UniqueSelector
+
+
+class Cluster:
+
+    def __init__(self, initial_model, clients: List[Client]):
+        self.model = initial_model
+        self.clients = clients
+
+    def append(self, client: Client):
+        self.clients.append(client)
+
+    def train(self, server_creator, epochs):
+        handlers = []
+        client_exec_time = {}
+        client_speed = {}
+        for client in self.clients:
+            client: Client
+            handlers.append(server_creator())
+            for e in range(epochs):
+                out, labels = client.local_train()
+                grad = handlers[-1].train(out, labels)
+                client.backward(grad)
+            exec_time = client.exec_time()
+            client_exec_time[client.id] = exec_time
+            client_speed[client.id] = client.speed or 1
+        weights_clients = funcs.as_dict([c.model.state_dict() for c in self.clients])
+        weights_servers = funcs.as_dict([s.model.state_dict() for s in handlers])
+        avg_clients, avg_server = self._aggregate(weights_clients, weights_servers)
+        self.update_dict(avg_clients)
+        return avg_server, avg_clients, client_exec_time, client_speed
+
+    def _aggregate(self, weights_clients, weights_servers):
+        avg_weights_clients = aggregate(weights_clients, {})
+        avg_weights_server = aggregate(weights_servers, {})
+        return avg_weights_clients, avg_weights_server
+
+    def update_dict(self, new_dict):
+        self.model.load_state_dict(new_dict)
+        for client in self.clients:
+            client.update_dict(new_dict)
+
+    def update_model(self, model):
+        self.model = model
+
+    def merge(self, other: 'Cluster'):
+        for c in other.clients:
+            self.clients.append(c)
+
+    def rand_resource(self):
+        for client in self.clients:
+            client.randomize_resources(1, False)
+
+    def __repr__(self):
+        if len(self.clients) > 0:
+            return f'Cluster: {self.clients[0].__repr__()}'
+        else:
+            return "Empty Cluster"
 
 
 class Speed:
@@ -32,29 +91,6 @@ class Speed:
         self.type = 0
         self.value = random.uniform(0.008, 0.01)
         return self
-
-
-class Cluster:
-
-    def __init__(self, initial_model, clients: List[Client]):
-        self.model = initial_model
-        self.clients = clients
-
-    def update_model(self, new_model):
-        self.model.load_state_dict(new_model.state_dict())
-        for client in self.clients:
-            client.model.load_state_dict(new_model.state_dict())
-
-    def merge(self, other: 'Cluster'):
-        for c in other.clients:
-            self.clients.append(c)
-        self.update_model(self.model)
-
-    def __repr__(self):
-        if len(self.clients) > 0:
-            return f'Cluster: {self.clients[0].__repr__()}'
-        else:
-            return "Empty Cluster"
 
 
 def generate(clients_data, initial_model, client_cluster_size, cluster_limit=1) -> Dict[int, Cluster]:
@@ -131,7 +167,3 @@ def shuffle(clusters):
     as_list = list(clusters.items())
     random.shuffle(as_list)
     return dict(as_list)
-
-
-def cluster_speed(clusters: Dict[int, Cluster]):
-    pass

@@ -20,11 +20,9 @@ class ElasticWeightConsolidation:
             _buff_param_name = param_name.replace('.', '__')
             self.model.register_buffer(_buff_param_name + '_estimated_mean', param.data.clone())
 
-    def _update_fisher_params(self, data_container, batch_size, num_batch):
+    def _update_fisher_params(self, data_container, batch_size):
         log_likelihoods = []
-        for i, (input, target) in enumerate(data_container.batch(batch_size)):
-            if i > num_batch:
-                break
+        for input, target in data_container.batch(batch_size):
             output = F.log_softmax(self.model(input), dim=1)
             log_likelihoods.append(output[:, target])
         log_likelihood = torch.cat(log_likelihoods).mean()
@@ -33,8 +31,8 @@ class ElasticWeightConsolidation:
         for _buff_param_name, param in zip(_buff_param_names, grad_log_likelihood):
             self.model.register_buffer(_buff_param_name + '_estimated_fisher', param.data.clone() ** 2)
 
-    def register_ewc_params(self, dataset, batch_size, num_batches):
-        self._update_fisher_params(dataset, batch_size, num_batches)
+    def register_ewc_params(self, dataset, batch_size):
+        self._update_fisher_params(dataset, batch_size)
         self._update_mean_params()
 
     def _compute_consolidation_loss(self, weight):
@@ -55,6 +53,13 @@ class ElasticWeightConsolidation:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def train(self, train_data, epochs):
+        self.model = self.model.to('cuda')
+        for _ in range(epochs):
+            for features, target in train_data.batch():
+                self.forward_backward_update(features, target)
+            self.register_ewc_params(train_data, len(train_data))
 
     def save(self, filename):
         torch.save(self.model, filename)

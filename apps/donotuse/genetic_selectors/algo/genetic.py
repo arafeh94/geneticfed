@@ -110,7 +110,6 @@ def ga(fitness, genes: ClusterSelector, desired, max_iter, r_cross=0.1, r_mut=0.
     minimize = 99999999999
     n_iter = 0
     while n_iter < max_iter and minimize > desired:
-        logging.info(f"Iteration Nb: {n_iter + 1}")
         scores = [fitness(chromosome) for chromosome in population]
         for index, ch in enumerate(population):
             if scores[index] < minimize:

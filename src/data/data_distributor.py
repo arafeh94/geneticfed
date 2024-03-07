@@ -6,7 +6,7 @@ import numpy as np
 import typing
 from libs.data_distribute import distribute
 from src.apis import lambdas, utils
-from src.apis.extensions import Dict
+from src.apis.extensions import Dict, CycleList
 from src.data.data_container import DataContainer
 
 
@@ -40,17 +40,19 @@ class ClusterDistributor(Distributor):
         self.max_size = max_size
 
     def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
+        data = data.as_numpy()
         clusters = {}
         clusters_data = self.cluster_distributor.distribute(data)
         for cluster_index in range(len(clusters_data)):
-            cluster_data: DataContainer = clusters_data[cluster_index]
+            cluster_data: DataContainer = clusters_data[cluster_index].as_numpy()
             label_distributor = LabelDistributor(self.cluster_client_num, len(cluster_data.labels()),
                                                  self.min_size, self.max_size)
             clusters[cluster_index] = label_distributor.distribute(cluster_data)
         return Dict(clusters)
 
     def id(self):
-        return "cluster_distributor"
+        return "clsdist_" + str(self.cluster_distributor) + "_" + str(self.min_size) + "_" + str(
+            self.max_size) + "_" + str(self.cluster_client_num)
 
 
 class DirichletDistributor(Distributor):
@@ -119,37 +121,33 @@ class PercentageDistributor(Distributor):
 class LabelDistributor(Distributor):
 
     def __init__(self, num_clients, label_per_client, min_size, max_size,
-                 is_random_label_size=False):
+                 is_random_label_size=False, allow_duplicate=True):
         super().__init__()
         self.num_clients = num_clients
         self.label_per_client = label_per_client
         self.min_size = min_size
         self.max_size = max_size
         self.is_random_label_size = is_random_label_size
+        self.allow_duplicate = allow_duplicate
 
     def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
         data = data.as_numpy()
         self.log(f'distributing {data}', level=0)
-        clients_data = defaultdict(list)
-        grouper = self.Grouper(data.x, data.y)
+        clients_data = {}
+        available_labels = CycleList(data.labels())
+        data_selector = DataContainerLabelSelector(data, not self.allow_duplicate)
         for client_id in range(self.num_clients):
             client_data_size = random.randint(self.min_size, self.max_size)
             label_per_client = random.randint(1, self.label_per_client) if self.is_random_label_size \
                 else self.label_per_client
-            selected_labels = grouper.groups(label_per_client)
+            selected_labels = available_labels.peek(label_per_client)
             self.log(f'generating data for {client_id}-{selected_labels}')
-            client_x = []
-            client_y = []
-            for shard in selected_labels:
-                selected_data_size = int(client_data_size / len(selected_labels)) or 1
-                rx, ry = grouper.get(shard, selected_data_size)
-                if len(rx) == 0:
-                    self.log(f'shard {round(shard)} have no more available data to distribute, skipping...', level=0)
-                else:
-                    client_x = rx if len(client_x) == 0 else np.concatenate((client_x, rx))
-                    client_y = ry if len(client_y) == 0 else np.concatenate((client_y, ry))
-            grouper.clean()
-            clients_data[client_id] = DataContainer(client_x, client_y).as_tensor()
+            clients_data[client_id] = DataContainer([], [])
+            for label in selected_labels:
+                label_size = int(client_data_size / len(selected_labels)) or 1
+                clients_data[client_id] = clients_data[client_id].concat(data_selector.peek(label, label_size))
+        for cid, cdt in clients_data.items():
+            clients_data[cid] = cdt.as_tensor()
         return Dict(clients_data)
 
     class Grouper:
@@ -197,6 +195,36 @@ class LabelDistributor(Distributor):
     def id(self):
         r = '_r' if self.is_random_label_size else ''
         return f'label_{self.num_clients}c_{self.label_per_client}l_{self.min_size}mn_{self.max_size}mx' + r
+
+
+class DataContainerLabelSelector:
+    def __init__(self, data_container: DataContainer, raise_exception=True):
+        self.data_containers = data_container.group_by(lambda x, y: y)
+        self.select_cursor = defaultdict(int)
+        self.raise_exception = raise_exception
+
+    def peek(self, label, size) -> DataContainer:
+        start_index = self.select_cursor[label]
+        end_index = self.select_cursor[label] + size
+        if end_index > len(self.data_containers[label]):
+            return self._handle_out_range(label, start_index, end_index)
+        self.select_cursor[label] = end_index
+        return self.data_containers[label][start_index:end_index]
+
+    def _handle_out_range(self, label, start, end):
+        if self.raise_exception:
+            raise Exception('data of label "{}" is out of range: {}:{}'.format(label, start, end))
+        else:
+            size = end - start
+            max_size = len(self.data_containers[label])
+            dt = self.data_containers[label][start:max_size]
+            rest_size = size - len(dt)
+            while rest_size > 0:
+                rest_container = self.data_containers[label][0:rest_size]
+                self.select_cursor[label] = rest_size
+                rest_size -= len(rest_container)
+                dt = dt.concat(rest_container)
+            return dt
 
 
 class SizeDistributor(Distributor):
@@ -291,8 +319,7 @@ class ShardDistributor(Distributor):
                 y = [label] * len(x)
                 client_x.extend(x)
                 client_y.extend(y)
-            client_data = DataContainer(client_x, client_y)
-            clients_data[index] = client_data.as_numpy()
+            clients_data[index] = DataContainer(client_x, client_y).as_tensor()
             index += 1
         return Dict(clients_data)
 
@@ -366,7 +393,7 @@ class PipeDistributor(Distributor):
         """
         pick from dataset records by labels
         @param label_ids: the list of label ids
-        @param size: the amount of records that should be picked
+        @param size: the total amount of records that should be picked
         @param repeat: how many instance this picker create. for instance, if repeat is 3 we create 3 clients
          of the same distribution
         @return: pipe function used by the distributor
@@ -388,18 +415,21 @@ class PipeDistributor(Distributor):
 
         return picker
 
-    def __init__(self, pipes: list):
+    def __init__(self, pipes: list, tag=''):
         super().__init__()
         self.pipes = pipes
+        self.tag = tag
 
     def id(self):
-        return f'pipe'
+        return f'pipes({len(self.pipes)})({self.tag})'
 
     def distribute(self, data: DataContainer) -> Dict[int, DataContainer]:
         all_clients = []
         grouper = LabelDistributor.Grouper(data.x, data.y)
         for pipe in self.pipes:
-            all_clients.extend(pipe(grouper))
+            clients = pipe(grouper)
+            clients = [c for c in clients if len(c) > 0]
+            all_clients.extend(clients)
         client_dict = {}
         for i in range(len(all_clients)):
             client_dict[i] = all_clients[i]

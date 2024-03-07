@@ -1,3 +1,4 @@
+import copy
 import random
 
 from matplotlib import pyplot as plt
@@ -5,6 +6,7 @@ from matplotlib import pyplot as plt
 from src.apis import lambdas
 from src.apis.federated_tools import aggregate
 from src.app.prebuilt import FastFed
+from src.data.data_distributor import ShardDistributor
 from src.data.data_loader import preload
 from apps.donotuse.split_learning import funcs
 from apps.donotuse.split_learning import dist, models, clusters
@@ -17,19 +19,20 @@ for t in test_sizes:
     cluster_size = t
     client_model = models.MnistClient(784, 32, 10)
     server_model = models.MnistServer(784, 32, 10)
-    clients_data = preload('mnist', dist.clustered(cluster_size), tag=f'cluster{cluster_size}')
-    train_data = clients_data.map(lambda k, dc: dc.shuffle(45).split(0.9)[0]).map(lambdas.as_tensor)
-    test_data = clients_data.map(lambda k, dc: dc.shuffle(45).split(0.9)[1]).reduce(lambdas.dict2dc).as_tensor()
-
+    # clients_data = preload('mnist', dist.clustered(cluster_size), tag=f'cluster{cluster_size}')
+    # train_data = clients_data.map(lambda k, dc: dc.shuffle(45).split(0.9)[0]).map(lambdas.as_tensor)
+    # test_data = clients_data.map(lambda k, dc: dc.shuffle(45).split(0.9)[1]).reduce(lambdas.dict2dc).as_tensor()
+    train_data = preload('mnist', ShardDistributor(150, 2), tag='12az3')
+    test_data = preload('mnist10k').as_tensor()
     # federated learning
-    fed = FastFed(data=train_data, rounds=rounds, client_ratio=0.3).start()
+    # fed = FastFed(data=train_data, rounds=rounds, client_ratio=0.3).start()
 
     # split learning
-    client_clusters = clusters.from_clients(train_data, client_model, 10)
+    client_clusters = clusters.from_clients(train_data, client_model, 1)
     as_list = list(client_clusters.items())
     random.shuffle(as_list)
     client_clusters = dict(as_list)
-    server = Server(server_model, client_model, test_data)
+    server = Server(server_model, copy.deepcopy(client_model), test_data)
     # configs
     split_accs = []
     for r in range(rounds):

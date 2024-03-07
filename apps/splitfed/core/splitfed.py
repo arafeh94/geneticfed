@@ -1,19 +1,26 @@
 import copy
 import time
+import typing
 from collections import defaultdict
 from typing import List
 
+from src.apis.utils import validate_state_dicts
+
 from apps.donotuse.main_split import funcs
 from apps.splitfed.core import clusters
+from apps.splitfed.core.client import Client
+from apps.splitfed.core.clusters import Cluster
 from apps.splitfed.core.server import Server
 from src.apis.extensions import LinkedList, Node
 from src.apis.federated_tools import aggregate, asyncgregate
+from src.data.data_container import DataContainer
 
 
 class SplitFed:
-    def __init__(self, server_model, client_model, client_clusters, test_data, epochs=10, lr=0.1, **configs):
+    def __init__(self, server_model, client_model, client_clusters: typing.Dict[int, Cluster], test_data: DataContainer,
+                 epochs=10, lr=0.1, **configs):
         self.fed_server = Server(server_model, lr)
-        self.client_model = copy.deepcopy(client_model)
+        self.client_model = client_model
         self.client_clusters = client_clusters
         self.acc = []
         self.round_exec_times = []
@@ -23,38 +30,31 @@ class SplitFed:
         self.measure = lambda x: max(x) if 'is_cluster' in configs and configs['is_cluster'] else sum(x)
         self.fed_speed = configs['fed_speed'] if 'fed_speed' in configs else -1
         self.history = []
+        self.lr = lr
+
+    def rand_resources(self):
+        for key, cluster in self.client_clusters.items():
+            cluster.rand_resource()
 
     def one_round(self):
-        client_handlers = []
         cluster_exec_times = {}
         client_clusters = clusters.shuffle(self.client_clusters)
+        train_time = time.time()
         for cluster_index, client_cluster in client_clusters.items():
-            client_exec_time = {}
-            client_speed = {}
-            for client in client_cluster.clients:
-                start_time = time.time()
-                handler = Server(self.fed_server.model_copy())
-                for e in range(self.epochs):
-                    out, labels = client.local_train()
-                    grad = handler.train(out, labels)
-                    client.backward(grad)
-                client_handlers.append(handler)
-                spent_time = time.time() - start_time
-                exec_time = 1 / client.speed * spent_time
-                client_exec_time[client.id] = exec_time
-                client_speed[client.id] = client.speed
-            cluster_exec_times[cluster_index] = self.measure(client_exec_time.values())
-            # cluster_exec_times[cluster_index] = max(client_exec_time.values())
-            weights_clients = funcs.as_dict([c.model_copy().state_dict() for c in client_cluster.clients])
-            weights_servers = funcs.as_dict([s.model_copy().state_dict() for s in client_handlers])
-            self._aggregate(weights_clients, weights_servers)
-            client_handlers.clear()
+            client_cluster: Cluster
+            server_creator = lambda: Server(self.fed_server.model_copy(), self.lr)
+            weights_servers, weights_clients, client_exec_time, _ = client_cluster.train(server_creator, self.epochs)
+            # cluster_exec_times[cluster_index] = self.measure(client_exec_time.values())
+            self.client_model.load_state_dict(weights_clients)
+            self.fed_server.model.load_state_dict(weights_servers)
         self.round_exec_times.append(sum(cluster_exec_times.values()))
         self.acc.append(self.infer())
         self.round_nb += 1
         stats = {'acc': self.acc[-1], 'round_exec_time': self.round_exec_times[-1],
                  'cluster_exec_times': cluster_exec_times}
         self.history.append(stats)
+        train_time = time.time() - train_time
+        print('avg train time: {}'.format(train_time))
         return stats
 
     def infer(self):
@@ -63,8 +63,7 @@ class SplitFed:
     def _aggregate(self, weights_clients, weights_servers):
         avg_weights_clients = aggregate(weights_clients, {})
         avg_weights_server = aggregate(weights_servers, {})
-        self.client_model.load_state_dict(avg_weights_clients)
-        self.fed_server.model.load_state_dict(avg_weights_server)
+        return avg_weights_clients, avg_weights_server
 
     def crossgregate(self, weights_client, weights_server, staled_round):
         staleness = self.round_nb - staled_round
@@ -81,8 +80,8 @@ class SplitFed:
         self.crossgregate(copy.deepcopy(split.client_model).state_dict(),
                           split.fed_server.model_copy().state_dict(), self.round_nb - split.round_nb)
         # new version check if working correctly
-        split.fed_server.model.load_state_dict(copy.deepcopy(self.fed_server.model).state_dict())
-        split.client_model.load_state_dict(copy.deepcopy(self.client_model).state_dict())
+        # split.fed_server.model.load_state_dict(copy.deepcopy(self.fed_server.model).state_dict())
+        # split.client_model.load_state_dict(copy.deepcopy(self.client_model).state_dict())
 
 
 class ClusterExecutor:
@@ -95,6 +94,7 @@ class ClusterExecutor:
 
     def one_round(self):
         self.round_id += 1
+        self.init_round()
         while True:
             # print('next: {}'.format(self.current.value.fed_speed))
             self.current.value.one_round()
@@ -131,3 +131,7 @@ class ClusterExecutor:
         total_current = sum([d[key] for d in current_history])
         total_prev = sum([d[key] for d in prev_history])
         return total_current > total_prev
+
+    def init_round(self):
+        for fed in self.splitfeds:
+            fed.rand_resources()

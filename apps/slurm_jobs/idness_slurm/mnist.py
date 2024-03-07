@@ -3,7 +3,7 @@ import logging
 import random
 import time
 
-from apps.idnes.distributor import IidDistributor
+from apps.iidness.distributor import IidDistributor
 from libs.model.linear.lr import LogisticRegression
 from src.apis import lambdas
 from src.apis.rw import IODict
@@ -43,13 +43,13 @@ for distributor in distributors:
     logger.info(client_data)
     prefix = f'{random.randint(0, 99999)}_{random.randint(0, 99999)}'
     config = {
-        'batch_size': args.batch,
-        'epochs': args.epochs,
-        'clients_per_round': args.clients_ratio,
-        'num_rounds': args.round,
+        'batch_size': 9999,
+        'epochs': 1,
+        'clients_per_round': 10,
+        'num_rounds': 300,
         'desired_accuracy': 0.99,
         'model': lambda: LogisticRegression(28 * 28, 10),
-        'lr': args.learn_rate,
+        'lr': 0.001,
         'id': hashed_args,
         'idn': idn,
         'title': 'mnist',

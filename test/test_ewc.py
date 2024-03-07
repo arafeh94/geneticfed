@@ -13,9 +13,11 @@ from src.apis.ewc import ElasticWeightConsolidation
 from src.data.data_loader import preload
 
 epoch, batch = 4, 9999
-model = BaseModel(28 * 28, 100, 10)
+model = BaseModel(28 * 28, 100, 10).to('cuda')
 ewc = ElasticWeightConsolidation(copy.deepcopy(model), nn.CrossEntropyLoss(), lr=0.01, weight=0.1)
-train, test = preload('mnist').as_tensor().split(0.8)
+train, test = preload('mnist').split(0.8)
+train = train.as_tensor('cuda')
+test = test.as_tensor()
 
 tasks = [
     train.filter(lambda x, y: y == 0),
@@ -30,15 +32,21 @@ tasks = [
     train.filter(lambda x, y: y == 9),
 ]
 
+for key, item in enumerate(tasks):
+    tasks[key] = tasks[key].as_tensor('cuda')
+
 
 def model_train(task, is_ewc):
     if is_ewc:
         for epochs in range(epoch):
             for input, target in task.batch(batch):
+                ewc.model = ewc.model.to('cuda')
                 ewc.forward_backward_update(input, target)
             ewc.register_ewc_params(task, batch, 300)
         res = federated_tools.infer(ewc.model, test.batch(batch))
     else:
+        global model
+        model = model.to('cuda')
         federated_tools.train(model, task.batch(batch), lr=0.01, epochs=epoch, logging=False)
         res = federated_tools.infer(model, test.batch(batch))
     print('\tis ewc: {}, results: {}'.format(is_ewc, res))

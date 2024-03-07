@@ -3,7 +3,7 @@ import logging
 import random
 import time
 
-from apps.idnes.distributor import IidDistributor
+from apps.iidness.distributor import IidDistributor
 from libs.model.cv.cnn import Cifar10Model
 from src.apis import lambdas, utils
 from src.apis.rw import IODict

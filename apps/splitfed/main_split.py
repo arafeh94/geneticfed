@@ -1,4 +1,5 @@
 import os
+import pickle
 
 from apps.splitfed.core.splitfed import SplitFed
 from apps.splitfed.core import clusters, dist
@@ -15,13 +16,14 @@ cluster_limit = 0
 client_cluster_size = 20
 rounds = 50
 # init tools
-logger = SQLiteLogger(os.path.splitext(os.path.basename(__file__))[0], 'logs.db')
+# logger = SQLiteLogger(os.path.splitext(os.path.basename(__file__))[0], 'logs.db')
 # init data
 client_model = MnistClient(784, 32, 10)
 server_model = MnistServer(784, 32, 10)
-clients_data = preload('mnist', dist.mnist_clustered(client_cluster_size, 300), tag=f'cluster{client_cluster_size}p{300}')
-train_data = clients_data.map(lambda k, dc: dc.shuffle(45).split(0.9)[0]).map(lambdas.as_tensor)
-test_data = clients_data.map(lambda k, dc: dc.shuffle(45).split(0.9)[1]).reduce(lambdas.dict2dc).as_tensor()
+clients_data = preload('mnist', dist.mnist_clustered(client_cluster_size, 200),
+                       tag=f'cluster{client_cluster_size}p{300}')
+train_data = clients_data.map(lambda k, dc: dc.shuffle(45)).map(lambdas.as_tensor)
+test_data = preload('mnist10k').as_tensor()
 
 # split learning
 fast, slow = clusters.generate_speed(train_data, client_model, client_cluster_size, cluster_limit=1, cllr=0.01)
@@ -35,5 +37,5 @@ while rounds > 0:
     rounds -= 1
     stats = split_learning.one_round()
     print('acc:', stats['acc'], 'in:', stats['round_exec_time'])
-    logger.log(r, acc=stats['acc'], exec_time=stats['round_exec_time'])
+    # logger.log(r, acc=stats['acc'], exec_time=stats['round_exec_time'])
     r += 1

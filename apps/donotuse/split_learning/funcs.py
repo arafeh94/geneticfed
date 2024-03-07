@@ -1,11 +1,10 @@
 import copy
+import os
+import pickle
 
 import torch
 from torch import nn
 
-from src.apis import lambdas
-from src.data import data_loader
-from src.data.data_distributor import ShardDistributor
 from src.data.data_loader import preload
 
 
@@ -62,5 +61,7 @@ def infer(server_model, client_model, data):
         corr_num += corr
         total_num += val_label.size(0)
         test_accuracy = corr_num / total_num
-        test_loss = val_loss / val_label.size(0)
-        return test_accuracy
+        return test_accuracy, val_loss
+
+
+

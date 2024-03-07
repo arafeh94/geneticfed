@@ -46,6 +46,30 @@ class Functional(typing.Generic[T]):
         pass
 
 
+class CycleList:
+    def __init__(self, lst):
+        self.cycle = self._cycle_list(lst)
+        self.index = 0
+
+    def _cycle_list(self, my_list, start_at=None):
+        start_at = 0 if start_at is None else my_list.index(start_at)
+        while True:
+            yield my_list[start_at]
+            start_at = (start_at + 1) % len(my_list)
+
+    def peek(self, n=1):
+        if n == 1:
+            res = next(self.cycle, self.index)
+            self.index += 1
+            return res
+        else:
+            res = []
+            for i in range(n):
+                res.append(next(self.cycle, self.index))
+                self.index += 1
+            return res
+
+
 class Dict(typing.Dict[K, V], Functional):
 
     # noinspection PyDefaultArgument
@@ -199,8 +223,7 @@ class TorchModel:
         model = self.model
         epochs = kwargs.get('epochs', 1)
         learn_rate = kwargs.get('lr', 0.01)
-        momentum = kwargs.get('momentum', 0)
-        optimizer = kwargs.get('optimizer', torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=momentum))
+        optimizer = kwargs.get('optimizer', torch.optim.SGD(model.parameters(), lr=learn_rate))
         criterion = kwargs.get('criterion', nn.CrossEntropyLoss())
         device = kwargs['device'] if 'device' in kwargs else ('cuda' if torch.cuda.is_available() else 'cpu')
         verbose = kwargs.get('verbose', 1)
@@ -208,12 +231,12 @@ class TorchModel:
         model.to(device)
         model.train()
         data_size = len(batched) * len(batched[0][0])
-        iterator = tqdm.tqdm(range(epochs), 'training', disable=(verbose == 0))
+        iterator = tqdm.tqdm(range(epochs), 'training', disable=verbose == 0)
         for _ in iterator:
             correct = 0
             for batch_idx, (x, labels) in enumerate(batched):
-                x = x.to(device)
-                labels = labels.to(device)
+                # x = x.to(device)
+                # labels = labels.to(device)
                 optimizer.zero_grad()
                 log_probs = model(x)
                 loss = criterion(log_probs, labels)
@@ -223,7 +246,7 @@ class TorchModel:
             accuracy = round(100 * (float(correct) / data_size), 2)
             accs.append(accuracy)
             iterator.set_postfix_str(f"accuracy: {accuracy}")
-        weights = model.cpu().state_dict()
+        weights = model.state_dict()
         return weights, accs
 
     def infer(self, batched, **kwargs):
@@ -235,7 +258,7 @@ class TorchModel:
         test_loss = test_acc = test_total = 0.
         criterion = nn.CrossEntropyLoss()
         with torch.no_grad():
-            iterator = tqdm.tqdm(enumerate(batched), 'inferring') if verbose else enumerate(batched)
+            iterator = tqdm.tqdm(enumerate(batched), 'inferring', disable=verbose == 0)
             for batch_idx, (x, target) in iterator:
                 x = x.to(device)
                 target = target.to(device)

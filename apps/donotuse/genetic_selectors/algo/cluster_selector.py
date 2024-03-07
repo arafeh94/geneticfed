@@ -1,10 +1,10 @@
 # noinspection DuplicatedCode
 class ClusterSelector:
-    def __init__(self, clients_model_dict: dict):
+    def __init__(self, grouped_clients: dict):
         """
-        @param clients_model_dict dictionary of user id, and the trained model of this user
+        @param grouped_clients dictionary of group id, and the group of clients
         """
-        self.id_label_dict = clients_model_dict
+        self.id_label_dict = grouped_clients
         self.used_clusters = []
         self.used_models = []
 

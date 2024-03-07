@@ -2,18 +2,113 @@ import hashlib
 import logging
 import os
 import random
+import time
 import typing
+from collections import Counter
 from datetime import datetime, timedelta
 from functools import reduce
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.stats import wasserstein_distance
 from sklearn import decomposition
 from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.decomposition import PCA
 
 from src.apis.extensions import Dict
 
 logger = logging.getLogger('utils')
+
+
+def pca(models: typing.Dict[int, any]) -> typing.Dict[int, any]:
+    flattened_weights = [flatten_state_dict(model.state_dict()) for _, model in models.items()]
+
+    stacked_weights = torch.stack(flattened_weights).cuda()
+    pca_result = torch.pca_lowrank(stacked_weights)
+    transformed = pca_result[0]
+    clients_pca = {}
+    for idx, client in models.items():
+        clients_pca[idx] = transformed[idx].cpu().numpy()
+
+    return clients_pca
+
+
+def group_dict_by_values(client_dict):
+    grouped_dict = {}
+    for client_id, labels in client_dict.items():
+        if isinstance(labels, list):
+            label_key = tuple(labels)
+        else:
+            label_key = labels
+        if label_key not in grouped_dict:
+            grouped_dict[label_key] = [client_id]
+        else:
+            grouped_dict[label_key].append(client_id)
+    return grouped_dict
+
+
+def normalize_by_column(arr):
+    try:
+        arr = np.array(arr)
+        min_values = arr.min(axis=0)
+        max_values = arr.max(axis=0)
+        for i in range(len(min_values)):
+            if min_values[i] == max_values[i]:
+                max_values[i] += 1
+        normalized_array = (arr - min_values) / (max_values - min_values)
+        return normalized_array
+    except RuntimeWarning as e:
+        raise Exception("Error during normalization: {}".format(e))
+
+
+def normalize_array(arr):
+    min_value = 0
+    max_value = max(arr)
+    if min_value == max_value:
+        max_value += 1
+    results = []
+    for item in arr:
+        val = (item - min_value) / (max_value - min_value)
+        results.append(val)
+    return results
+
+
+def min_max_normalize_2d_array(matrix):
+    num_rows, num_columns = len(matrix), len(matrix[0])
+    normalized_matrix = []
+
+    for col in range(num_columns):
+        column_values = [row[col] for row in matrix]
+        min_val, max_val = min(column_values), max(column_values)
+
+        # Handle the case where all values in the column are the same
+        if min_val == max_val:
+            normalized_column = [0.5] * num_rows  # Set to a default value (e.g., 0.5)
+        else:
+            normalized_column = [(x - min_val) / (max_val - min_val) for x in column_values]
+
+        normalized_matrix.append(normalized_column)
+
+    # Transpose the normalized matrix to get it back in the original format
+    normalized_matrix = list(map(list, zip(*normalized_matrix)))
+    return normalized_matrix
+
+
+def z_score_normalize_by_column(matrix):
+    num_columns = len(matrix[0])
+    normalized_matrix = []
+
+    for col in range(num_columns):
+        column_values = [row[col] for row in matrix]
+        mean_val = sum(column_values) / len(column_values)
+        std_dev = (sum((x - mean_val) ** 2 for x in column_values) / len(column_values)) ** 0.5
+        normalized_column = [(x - mean_val) / std_dev for x in column_values]
+        normalized_matrix.append(normalized_column)
+
+    # Transpose the normalized matrix to get it back in the original format
+    normalized_matrix = list(map(list, zip(*normalized_matrix)))
+    return normalized_matrix
 
 
 def smooth(vals, sigma=2):
@@ -96,11 +191,36 @@ def compress(weights, n_components):
     return weights.flatten()
 
 
+def compress_weights(weights, n_components):
+    return compress(flatten_weights(weights), n_components)
+
+
 def flatten_weights(weights):
-    weight_vectors = []
-    for _, weight in weights.items():
-        weight_vectors.extend(weight.flatten().tolist())
-    return np.array(weight_vectors)
+    return np.concatenate([weights.flatten() for weights in weights.values()])
+
+
+def flatten_state_dict(model_state_dict):
+    flattened_params = []
+
+    for param_tensor in model_state_dict:
+        param = model_state_dict[param_tensor]
+        flattened_params.append(param.view(-1))
+
+    flattened_tensor = torch.cat(flattened_params)
+
+    return flattened_tensor
+
+
+def get_average_weight_divergence(global_weights: typing.OrderedDict,
+                                  local_weights: typing.List[typing.OrderedDict]):
+    all_results = []
+    flattened_global_weights = flatten_weights(global_weights)
+    for weight in local_weights:
+        flattened_trainer_weights = flatten_weights(weight)
+        result = wasserstein_distance(flattened_global_weights, flattened_trainer_weights)
+        all_results.append(result)
+    all_results = sum(all_results) / len(all_results)
+    return all_results
 
 
 def dict_select(idx, dict_ref):
@@ -132,6 +252,12 @@ def enable_logging(file_name=None, level=logging.INFO):
 
 def swap(a, b):
     return b, a
+
+
+def str_all_in(arr, str):
+    if not isinstance(arr, list):
+        arr = [arr]
+    return all([a in str for a in arr])
 
 
 def validate_state_dicts(model_state_dict_1, model_state_dict_2):
@@ -187,7 +313,7 @@ class UniqueSelector:
             r = random.randint(0, len(self.iterable) - 1)
         return self.select(r)
 
-    def peek(self, reset=True):
+    def peek(self, reset=False):
         select_index = 0 if len(self.selected) == 0 else max(self.selected) + 1
         if select_index >= len(self.iterable):
             if reset:
@@ -200,3 +326,47 @@ class UniqueSelector:
 
     def reset(self):
         self.selected = []
+
+
+def ddict2dict(d):
+    for k, v in d.items():
+        if isinstance(v, dict):
+            d[k] = ddict2dict(v)
+    return dict(d)
+
+
+def plot_bar_dictionary(dictionary):
+    labels = list(dictionary.keys())
+    values = list(dictionary.values())
+
+    plt.bar(labels, values)
+    plt.xlabel('Labels')
+    plt.ylabel('Values')
+    plt.title('Dictionary Plot')
+    plt.show()
+
+
+def duplicates(lst):
+    return [item for item, count in Counter(lst).items() if count > 1]
+
+
+def shuffle(arr):
+    return np.random.shuffle(arr)
+
+
+class TimeCheckpoint:
+    def __init__(self):
+        self.last_checkpoint = time.time()
+        self.times = []
+
+    def checkpoint(self):
+        current = time.time()
+        diff = current - self.last_checkpoint
+        self.last_checkpoint = current
+        self.times.append(diff)
+        return diff
+
+    def cp(self, access=None):
+        if access is None:
+            return self.checkpoint()
+        return self.times[access]

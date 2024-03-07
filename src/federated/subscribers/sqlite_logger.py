@@ -1,17 +1,14 @@
+import calendar
 import logging
-import os.path
-import re
 import sqlite3
-from pathlib import Path
-from sqlite3 import OperationalError
+import time
 
-from src import manifest
 from src.apis import utils
 from src.federated.events import FederatedSubscriber
 from src.federated.federated import FederatedLearning
 
 
-# noinspection SqlNoDataSourceInspection
+# noinspection SqlNoDataSourceInspection,SqlDialectInspection
 class SQLiteLogger(FederatedSubscriber):
     def __init__(self, id, db_path, config=''):
         super().__init__()
@@ -60,6 +57,9 @@ class SQLiteLogger(FederatedSubscriber):
             cursor.execute(query)
         self.con.commit()
 
+    def close(self):
+        self.con.close()
+
     def _extract_params(self, **kwargs):
         def param_map(val):
             if isinstance(val, int):
@@ -81,6 +81,11 @@ class SQLiteLogger(FederatedSubscriber):
         record = {'round_id': round_id, **kwargs}
         self._insert(record)
 
+    def log_all(self, round_id, args: dict):
+        self._create_table(**args)
+        record = {'round_id': round_id, **args}
+        self._insert(record)
+
     def on_round_end(self, params):
         context: FederatedLearning.Context = params['context']
         last_record: dict = context.history[context.round_id]
@@ -91,3 +96,7 @@ class SQLiteLogger(FederatedSubscriber):
             self.id = 'None'
         if self.id[0].isdigit():
             self.id = f't{self.id}'
+
+    @staticmethod
+    def new_instance(path, configs):
+        return SQLiteLogger(str(calendar.timegm(time.gmtime())), path, configs)

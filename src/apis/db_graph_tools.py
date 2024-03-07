@@ -1,6 +1,8 @@
 import typing
 from collections import defaultdict
 from typing import Callable
+
+import numpy as np
 from matplotlib import pyplot as plt, pyplot
 from src.apis.fed_sqlite import FedDB
 
@@ -56,14 +58,16 @@ class Graphs:
         plt.clf()
         tables = self._db.tables()
         sessions = [(
-            item['session_id'], item['field'],
+            item['session_id'],
+            item['field'] if 'field' in item else None,
             item['config'] if 'config' in item else {},
             item['transform'] if 'transform' in item else None,
             item['where'] if 'where' in item else None,
+            item['query'] if 'query' in item else None,
         ) for item in configs]
         session_values = {}
-        for session_id, field, config, transform, where in sessions:
-            values = self._db.get(session_id, field, where)
+        for session_id, field, config, transform, where, query in sessions:
+            values = self._db.query(query) if query else self._db.get(session_id, field, where)
             if transform:
                 transformers = transform if isinstance(transform, list) else [transform]
                 for trans in transformers:
@@ -86,17 +90,34 @@ class Graphs:
                 plt.pause(pause)
                 round_id += 1
         else:
-            for session_id, field, config, transform, where in sessions:
-                plt.plot(session_values[f'{session_id}_{field}_{str(transform)}'], **config)
-        plt.xlabel(xlabel, fontsize=18)
-        plt.ylabel(ylabel, fontsize=18)
-        plt.title(title)
-        plt.legend(loc='lower right')
+            for session_id, field, config, transform, where, query in sessions:
+                plot_vals = np.array(session_values[f'{session_id}_{field}_{str(transform)}'])
+                plt.plot(plot_vals, **config)
         if callable(plt_func):
             plt_func(plt)
-        if save_path and not animated:
-            fig = plt.gcf()
-            fig.set_size_inches(18.5, 10.5)
+        plt.xlabel(xlabel, fontsize='large', labelpad=5)
+        plt.ylabel(ylabel, fontsize='large', labelpad=5)
+        fig = plt.gcf()
+        fig.set_size_inches(18.5, 10.5)
+        if save_path:
+            fig.savefig(save_path, bbox_inches='tight', dpi=100)
+        if show:
+            plt.show()
+        return plt
+
+    def plot2(self, sessions, title='', save_path='', xlabel='', ylabel='',
+              plt_func: Callable[[pyplot], typing.NoReturn] = None, show=True):
+        plt.clf()
+        for session_id, vals in sessions.items():
+            plt.plot(vals['x'], vals['y'], **vals['config'] if 'config' in vals else {})
+
+        if callable(plt_func):
+            plt_func(plt)
+        plt.xlabel(xlabel, fontsize='large', labelpad=5)
+        plt.ylabel(ylabel, fontsize='large', labelpad=5)
+        fig = plt.gcf()
+        fig.set_size_inches(18.5, 10.5)
+        if save_path:
             fig.savefig(save_path, bbox_inches='tight', dpi=100)
         if show:
             plt.show()

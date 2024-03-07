@@ -8,18 +8,15 @@ from apps.donotuse.main_split import funcs
 
 
 class Server:
-    def __init__(self, model, lr=0.0001):
-        self.model = model
-        self.optimizer = Adam(self.model.parameters(), lr=lr)
+    def __init__(self, model, lr=0.001):
+        self.device = torch.device('cuda')
         self.criterion = nn.CrossEntropyLoss()
-        self.device = torch.device('cpu')
+        self.model = model.to(self.device)
+        self.optimizer = Adam(self.model.parameters(), lr=lr)
 
     def train(self, client_output, labels):
-        self.model = self.model.to(self.device)
-        client_output_cuda = client_output.to(self.device)
-        labels = labels.to(self.device)
         self.optimizer.zero_grad()
-        output = self.model(client_output_cuda)
+        output = self.model(client_output)
         loss = self.criterion(output, labels)
         loss.backward()
         grad = client_output.grad.clone().detach()

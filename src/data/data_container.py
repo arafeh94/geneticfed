@@ -26,7 +26,7 @@ class DataContainer(Functional):
         return batch_data
 
     def labels(self):
-        return list(np.unique(self.y))
+        return list(np.unique(self.as_numpy().y))
 
     def get(self):
         return self.x, self.y
@@ -43,16 +43,18 @@ class DataContainer(Functional):
     def is_numpy(self):
         return type(self.x) == np.ndarray and type(self.y) == np.ndarray
 
-    def as_tensor(self) -> 'DataContainer':
+    def as_tensor(self, device=None) -> 'DataContainer':
+        device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.is_tensor():
             return self
         if self.is_numpy():
-            return DataContainer(torch.from_numpy(self.x).float(), torch.from_numpy(self.y).long())
-        return DataContainer(torch.tensor(self.x).float(), torch.tensor(self.y).long())
+            return DataContainer(torch.from_numpy(self.x).float().to(device),
+                                 torch.from_numpy(self.y).long().to(device))
+        return DataContainer(torch.tensor(self.x).float().to(device), torch.tensor(self.y).long().to(device))
 
     def as_numpy(self, dtype=None) -> 'DataContainer':
         if self.is_tensor():
-            return DataContainer(self.x.numpy(), self.y.numpy())
+            return DataContainer(self.x.to('cpu').numpy(), self.y.to('cpu').numpy())
         if self.is_numpy():
             return self
         return DataContainer(np.asarray(self.x, dtype=dtype), np.asarray(self.y, dtype=dtype))
@@ -61,7 +63,7 @@ class DataContainer(Functional):
         if self.is_numpy():
             return DataContainer(self.x.tolist(), self.y.tolist())
         if self.is_tensor():
-            return DataContainer(self.x.numpy().tolist(), self.y.numpy().tolist())
+            return DataContainer(self.x.cpu().numpy().tolist(), self.y.cpu().numpy().tolist())
         return self
 
     def split(self, train_freq) -> typing.Tuple['DataContainer', 'DataContainer']:
@@ -142,6 +144,19 @@ class DataContainer(Functional):
         new_y = other.y if self.is_empty() else np.concatenate((self.y, other.y))
         return DataContainer(new_x, new_y)
 
+    def group_by(self, func: typing.Callable[[list, int], typing.Any]):
+        res = {}
+        for x, y in zip(self.x, self.y):
+            group = func(x, y)
+            if group not in res:
+                res[group] = ([], [])
+            res[group][0].append(x)
+            res[group][1].append(y)
+        res_dc = {}
+        for group in res:
+            res_dc[group] = DataContainer(res[group][0], res[group][1])
+        return res_dc
+
     def iter(self):
         class Iterator:
             def __init__(self, dc: DataContainer):
@@ -162,6 +177,9 @@ class DataContainer(Functional):
 
         return Iterator(self)
 
+    def unique(self):
+        return np.unique(self.as_numpy().y)
+
     def __iter__(self):
         return self.iter()
 
@@ -169,4 +187,5 @@ class DataContainer(Functional):
         return DataContainer(self.x[key], self.y[key])
 
     def __repr__(self):
-        return f'Size:{len(self)}, Unique:{np.unique(self.y)}, Features:{None if self.is_empty() else np.shape(self.x[0])}'
+        as_numpy = self.as_numpy()
+        return f'Size:{len(self)}, Unique:{np.unique(as_numpy.y)}, Features:{None if self.is_empty() else np.shape(as_numpy.x[0])}'

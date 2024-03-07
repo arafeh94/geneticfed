@@ -19,8 +19,11 @@ class FedDB:
     def get(self, table_name, field, where=''):
         where = where or ''
         query = f'select {field} from {table_name} {where}'
-        records = self.execute(query)
-        values = list(map(lambda x: x[0], records))
+        return self.query(query)
+
+    def query(self, q):
+        records = self.execute(q)
+        values = list(map(lambda x: x[0] if len(x) == 1 else x, records))
         return values
 
     def acc(self, table_name):
@@ -28,6 +31,20 @@ class FedDB:
         records = self.execute(query)
         acc = list(map(lambda x: x[0], records))
         return acc
+
+    def table_exists(self, table_name):
+        cursor = self.con.cursor()
+        cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?;", (table_name,))
+        result = cursor.fetchone()
+        cursor.close()
+        return result is not None
+
+    def clean(self):
+        sessions = self.tables()
+        for session in sessions:
+            if not self._table_exists(session):
+                self.execute("DELETE FROM session WHERE session_id=?;", (session,))
+                self.con.commit()
 
     def tables(self):
         query = 'select * from session'

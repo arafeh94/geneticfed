@@ -34,7 +34,7 @@ def train(model, train_data, epochs=10, lr=0.1, logging=True):
         if len(batch_loss) > 0:
             epoch_loss.append(sum(batch_loss) / len(batch_loss))
 
-    weights = model.cpu().state_dict()
+    weights = model.state_dict()
     return weights
 
 
@@ -83,8 +83,6 @@ def infer(model, test_data, transformer=None):
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
         for batch_idx, (x, target) in enumerate(test_data):
-            x = x.to('cpu')
-            target = target.to('cpu')
             if transformer:
                 x, target = transformer(x, target)
             pred = model(x)

@@ -17,8 +17,8 @@ class TorchTrainer(Trainer):
 
     def train(self, model: nn.Module, train_data: DataContainer, context: FederatedLearning.Context,
               config: TrainerParams) -> Tuple[any, int]:
-        # model.to(self.device)
-        # model.train()
+        model.to(self.device)
+        model.train()
         optimizer = config.get_optimizer()(model)
 
         criterion = nn.CrossEntropyLoss()
@@ -30,8 +30,8 @@ class TorchTrainer(Trainer):
         for _ in epochs:
             batch_loss = []
             for batch_idx, (x, labels) in enumerate(train_data.batch(config.batch_size)):
-                # x = x.to(self.device)
-                # labels = labels.to(self.device)
+                x = x.to(self.device)
+                labels = labels.to(self.device)
                 optimizer.zero_grad()
                 log_probs = model(x)
                 loss = criterion(log_probs, labels)
